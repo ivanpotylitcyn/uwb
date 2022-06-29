@@ -1,2 +1,2 @@
 # uwb
-Underwater beacon
+Underwater Beacon
