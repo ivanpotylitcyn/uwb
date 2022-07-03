@@ -57,6 +57,8 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define WAKE_OPTO_Pin GPIO_PIN_0
+#define WAKE_OPTO_GPIO_Port GPIOA
 #define IOUT_bat_Pin GPIO_PIN_1
 #define IOUT_bat_GPIO_Port GPIOA
 #define ACOK_bat_Pin GPIO_PIN_2
@@ -67,8 +69,8 @@ void Error_Handler(void);
 #define EN_12LED_GPIO_Port GPIOA
 #define EN_3V3_Pin GPIO_PIN_5
 #define EN_3V3_GPIO_Port GPIOA
-#define EN_6V_Pin GPIO_PIN_6
-#define EN_6V_GPIO_Port GPIOA
+#define EN_6V0_Pin GPIO_PIN_6
+#define EN_6V0_GPIO_Port GPIOA
 #define EN_RS_Pin GPIO_PIN_2
 #define EN_RS_GPIO_Port GPIOB
 #define I2C_SCL_BME_Pin GPIO_PIN_10
@@ -79,8 +81,8 @@ void Error_Handler(void);
 #define nRESET_MD_GPIO_Port GPIOB
 #define nDRDY_MD_Pin GPIO_PIN_13
 #define nDRDY_MD_GPIO_Port GPIOB
-#define EN_5V_Pin GPIO_PIN_14
-#define EN_5V_GPIO_Port GPIOB
+#define EN_5V0_Pin GPIO_PIN_14
+#define EN_5V0_GPIO_Port GPIOB
 #define UART_DE_Pin GPIO_PIN_8
 #define UART_DE_GPIO_Port GPIOA
 #define UART_TX_Pin GPIO_PIN_9

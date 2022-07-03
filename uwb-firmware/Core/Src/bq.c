@@ -58,6 +58,16 @@ struct bq24735 {
     bool                        charging;
 };
 
+void bq_init(bq_context_t* bq)
+{
+
+}
+
+void bq_handle(bq_context_t* bq)
+{
+
+}
+
 static inline struct bq24735 *to_bq24735(struct power_supply *psy)
 {
 	return power_supply_get_drvdata(psy);

@@ -44,28 +44,28 @@ void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, EN_BQ_Pin|EN_12LED_Pin|EN_3V3_Pin|EN_6V_Pin
+  HAL_GPIO_WritePin(GPIOA, EN_BQ_Pin|EN_12LED_Pin|EN_3V3_Pin|EN_6V0_Pin
                           |UART_DE_Pin|light_LED_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(EN_RS_GPIO_Port, EN_RS_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, nRESET_MD_Pin|EN_5V_Pin|EN_Hall_Pin|LED_B_Pin
+  HAL_GPIO_WritePin(GPIOB, nRESET_MD_Pin|EN_5V0_Pin|EN_Hall_Pin|LED_B_Pin
                           |LED_G_Pin|LED_R_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(EN_water_sens_GPIO_Port, EN_water_sens_Pin, GPIO_PIN_SET);
 
-  /*Configure GPIO pins : PAPin PAPin */
-  GPIO_InitStruct.Pin = ACOK_bat_Pin|water_sens_Pin;
+  /*Configure GPIO pins : PAPin PAPin PAPin */
+  GPIO_InitStruct.Pin = WAKE_OPTO_Pin|ACOK_bat_Pin|water_sens_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /*Configure GPIO pins : PAPin PAPin PAPin PAPin
                            PAPin PAPin PAPin */
-  GPIO_InitStruct.Pin = EN_BQ_Pin|EN_12LED_Pin|EN_3V3_Pin|EN_6V_Pin
+  GPIO_InitStruct.Pin = EN_BQ_Pin|EN_12LED_Pin|EN_3V3_Pin|EN_6V0_Pin
                           |UART_DE_Pin|EN_water_sens_Pin|light_LED_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
@@ -74,7 +74,7 @@ void MX_GPIO_Init(void)
 
   /*Configure GPIO pins : PBPin PBPin PBPin PBPin
                            PBPin PBPin PBPin */
-  GPIO_InitStruct.Pin = EN_RS_Pin|nRESET_MD_Pin|EN_5V_Pin|EN_Hall_Pin
+  GPIO_InitStruct.Pin = EN_RS_Pin|nRESET_MD_Pin|EN_5V0_Pin|EN_Hall_Pin
                           |LED_B_Pin|LED_G_Pin|LED_R_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;

@@ -25,9 +25,8 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "bq.h"
-#include "rs.h"
-#include "hall.h"
+#include "uwb.h"
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -58,7 +57,11 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+  if (GPIO_Pin == WAKE_OPTO_Pin)
+    HAL_PWR_DisableSleepOnExit();
+}
 /* USER CODE END 0 */
 
 /**
@@ -94,10 +97,7 @@ int main(void)
   MX_I2C2_Init();
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
-
-  bq_init();
-  rs_init();
-  hall_init();
+  uwb_init();
 
   /* USER CODE END 2 */
 
@@ -108,7 +108,7 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-
+    uwb_handle();
   }
   /* USER CODE END 3 */
 }
