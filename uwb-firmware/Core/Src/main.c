@@ -25,7 +25,9 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "bq.h"
+#include "rs.h"
+#include "hall.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -93,15 +95,9 @@ int main(void)
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
 
-  HAL_GPIO_WritePin(EN_6V_GPIO_Port, EN_6V_Pin, GPIO_PIN_SET);
-  HAL_GPIO_WritePin(EN_5V_GPIO_Port, EN_5V_Pin, GPIO_PIN_SET);
-  HAL_GPIO_WritePin(EN_3V3_GPIO_Port, EN_3V3_Pin, GPIO_PIN_SET);
-
-  HAL_Delay(1000);
-
-  HAL_GPIO_WritePin(EN_3V3_GPIO_Port, EN_3V3_Pin, GPIO_PIN_RESET);
-  HAL_GPIO_WritePin(EN_5V_GPIO_Port, EN_5V_Pin, GPIO_PIN_RESET);
-  HAL_GPIO_WritePin(EN_6V_GPIO_Port, EN_6V_Pin, GPIO_PIN_RESET);
+  bq_init();
+  rs_init();
+  hall_init();
 
   /* USER CODE END 2 */
 
