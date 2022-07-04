@@ -147,6 +147,16 @@
 			<locationURI>PARENT-1-PROJECT_LOC/Core/Src/adc.c</locationURI>
 		</link>
 		<link>
+			<name>Application/User/Core/bme280.c</name>
+			<type>1</type>
+			<locationURI>PARENT-1-PROJECT_LOC/Core/Src/bme280.c</locationURI>
+		</link>
+		<link>
+			<name>Application/User/Core/bq.c</name>
+			<type>1</type>
+			<locationURI>PARENT-1-PROJECT_LOC/Core/Src/bq.c</locationURI>
+		</link>
+		<link>
 			<name>Application/User/Core/gpio.c</name>
 			<type>1</type>
 			<locationURI>PARENT-1-PROJECT_LOC/Core/Src/gpio.c</locationURI>
@@ -162,6 +172,11 @@
 			<locationURI>PARENT-1-PROJECT_LOC/Core/Src/main.c</locationURI>
 		</link>
 		<link>
+			<name>Application/User/Core/ps.c</name>
+			<type>1</type>
+			<locationURI>PARENT-1-PROJECT_LOC/Core/Src/ps.c</locationURI>
+		</link>
+		<link>
 			<name>Application/User/Core/stm32l0xx_hal_msp.c</name>
 			<type>1</type>
 			<locationURI>PARENT-1-PROJECT_LOC/Core/Src/stm32l0xx_hal_msp.c</locationURI>
@@ -175,6 +190,11 @@
 			<name>Application/User/Core/usart.c</name>
 			<type>1</type>
 			<locationURI>PARENT-1-PROJECT_LOC/Core/Src/usart.c</locationURI>
+		</link>
+		<link>
+			<name>Application/User/Core/uwb.c</name>
+			<type>1</type>
+			<locationURI>PARENT-1-PROJECT_LOC/Core/Src/uwb.c</locationURI>
 		</link>
 	</linkedResources>
 </projectDescription>

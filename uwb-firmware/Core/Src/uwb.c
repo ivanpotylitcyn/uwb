@@ -1,9 +1,5 @@
 #include "uwb.h"
-
 #include "main.h"
-#include "bq.h"
-
-#include <stdint.h>
 
 #define UWB_STARTUP_DELAY           5000
 
@@ -44,10 +40,6 @@ void uwb_init()
     HAL_GPIO_WritePin(EN_3V3_GPIO_Port, EN_3V3_Pin, GPIO_PIN_SET);      // Enable 3V3
     HAL_GPIO_WritePin(EN_5V0_GPIO_Port, EN_5V0_Pin, GPIO_PIN_SET);      // Enable 5V0
 
-    uwb.power.power_6v0 = true;
-    uwb.power.power_3v3 = true;
-    uwb.power.power_5v0 = true;
-
 
     // ****************************************
     // Enable RS
@@ -68,16 +60,16 @@ void uwb_init()
 
 void sensors_handle()
 {
-    bme_read(&uwb.bme280);
+    bme280_read(&uwb.bme280);
     ps_read(&uwb.ps);
     uwb.water_sink = !HAL_GPIO_ReadPin(water_sens_GPIO_Port, water_sens_Pin);
 
-    if (uwb.state = UWB_ONBOARD && uwb.ps.pressure > UWB_SUBMERGED_THRESHOLD)
-        uwb.state == UWB_SUBMERGED;
+    if (uwb.state == UWB_ONBOARD && uwb.ps.pressure > UWB_SUBMERGED_THRESHOLD)
+        uwb.state = UWB_SUBMERGED;
 
-    if (uwb.state = UWB_SUBMERGED && uwb.ps.pressure < UWB_ENMERGED_THRESHOLD) {
+    if (uwb.state == UWB_SUBMERGED && uwb.ps.pressure < UWB_ENMERGED_THRESHOLD) {
         HAL_GPIO_WritePin(EN_12LED_GPIO_Port, EN_12LED_Pin, GPIO_PIN_SET);
-        uwb.state == UWB_ENMERGED;
+        uwb.state = UWB_ENMERGED;
     }
 }
 
