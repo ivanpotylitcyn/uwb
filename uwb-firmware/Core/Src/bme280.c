@@ -226,6 +226,8 @@ void bme280_init() {
 }
 
 void bme280_read(bme280_context_t* bme) {
+
+    bme->pressure = BME280_ReadPressure();
     bme->humidity = BME280_ReadHumidity();
     bme->temperature = BME280_ReadTemperature();
 }
