@@ -147,6 +147,11 @@
 			<locationURI>PARENT-1-PROJECT_LOC/Core/Src/adc.c</locationURI>
 		</link>
 		<link>
+			<name>Application/User/Core/ads1220.c</name>
+			<type>1</type>
+			<locationURI>PARENT-1-PROJECT_LOC/Core/Src/ads1220.c</locationURI>
+		</link>
+		<link>
 			<name>Application/User/Core/bme280.c</name>
 			<type>1</type>
 			<locationURI>PARENT-1-PROJECT_LOC/Core/Src/bme280.c</locationURI>
