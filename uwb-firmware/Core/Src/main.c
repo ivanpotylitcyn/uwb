@@ -22,6 +22,7 @@
 #include "i2c.h"
 #include "usart.h"
 #include "gpio.h"
+#include "bme280.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -99,6 +100,7 @@ int main(void)
   /* USER CODE BEGIN 2 */
   uwb_init();
 
+  bme280_init();
   /* USER CODE END 2 */
 
   /* Infinite loop */
