@@ -29,6 +29,7 @@ void uwb_init()
     // Enable BQ
     // ****************************************
 
+    HAL_GPIO_WritePin(EN_BQ_GPIO_Port, EN_BQ_Pin, GPIO_PIN_SET);		// Enable BQ
     bq_init(&uwb.bq);
 
 
@@ -52,10 +53,11 @@ void uwb_init()
 
 
     // ****************************************
-    // Enable Hall sensor
+    // Enable sensors
     // ****************************************
 
     HAL_GPIO_WritePin(EN_Hall_GPIO_Port, EN_Hall_Pin, GPIO_PIN_RESET);  // Enable Hall sensor
+    bme280_init();														// Initialize BME280
 }
 
 void sensors_handle()
@@ -134,7 +136,7 @@ void uwb_handle()
         HAL_GPIO_WritePin(EN_3V3_GPIO_Port, EN_3V3_Pin, GPIO_PIN_RESET);        // Disable 3V3
         HAL_GPIO_WritePin(EN_6V0_GPIO_Port, EN_6V0_Pin, GPIO_PIN_RESET);        // Disable 6V0
 
-        HAL_SuspendTick();                                                      // Disable tick interrrupt
+        HAL_SuspendTick();                                                      // Disable tick interrupt
         HAL_PWR_EnableSleepOnExit();                                            // Enable Sleep mode
         HAL_PWR_EnterSLEEPMode(PWR_MAINREGULATOR_ON, PWR_SLEEPENTRY_WFI);       // Enter Sleep mode
 
@@ -144,7 +146,7 @@ void uwb_handle()
         // ****************************************
 
 
-        HAL_ResumeTick();                                                       // Enable tick interrrupt
+        HAL_ResumeTick();                                                       // Enable tick interrupt
 
         HAL_GPIO_WritePin(EN_5V0_GPIO_Port, EN_5V0_Pin, GPIO_PIN_SET);          // Enable 5V0
         HAL_GPIO_WritePin(EN_3V3_GPIO_Port, EN_3V3_Pin, GPIO_PIN_SET);          // Enable 3V3

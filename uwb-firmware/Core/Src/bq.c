@@ -59,10 +59,16 @@
 //};
 
 #include "bq.h"
+#include "i2c.h"
 
 void bq_init(bq_context_t* bq)
 {
+	uint16_t addr = 0x09;
+    uint16_t value = 0;
 
+    HAL_StatusTypeDef status = HAL_OK;
+    status = HAL_I2C_Mem_Read(&hi2c1, addr, BQ24735_DEVICE_ID, I2C_MEMADD_SIZE_8BIT, (uint8_t*)&value, 2, 0x1000);
+    if(status != HAL_OK) Error();
 }
 
 void bq_handle(bq_context_t* bq)
