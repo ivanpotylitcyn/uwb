@@ -177,6 +177,11 @@
 			<locationURI>PARENT-1-PROJECT_LOC/Core/Src/main.c</locationURI>
 		</link>
 		<link>
+			<name>Application/User/Core/modbus.c</name>
+			<type>1</type>
+			<locationURI>PARENT-1-PROJECT_LOC/Core/Src/modbus.c</locationURI>
+		</link>
+		<link>
 			<name>Application/User/Core/ps.c</name>
 			<type>1</type>
 			<locationURI>PARENT-1-PROJECT_LOC/Core/Src/ps.c</locationURI>

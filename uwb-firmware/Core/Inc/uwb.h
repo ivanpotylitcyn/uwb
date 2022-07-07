@@ -18,6 +18,14 @@ typedef enum {
     UWB_ENMERGED,
 } uwb_state_t;
 
+#define UWB_MODBUS_ID 0x42
+
+typedef enum {
+    UWB_TEMPERATURE = 0x01,
+    UWB_HUMIDITY    = 0x02,
+    UWB_PRESSURE    = 0x03,
+} uwb_modbus_register_t;
+
 typedef struct {
     uwb_mode_t          mode;
     uwb_state_t         state;
@@ -29,8 +37,9 @@ typedef struct {
     bool                water_sink;
 } uwb_context_t;
 
+extern uwb_context_t uwb;
+
 void uwb_init();
 void uwb_handle();
 
 void modbus_init();
-void modbus_handle();
