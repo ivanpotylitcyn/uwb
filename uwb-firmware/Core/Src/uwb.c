@@ -10,12 +10,18 @@
 #define UWB_SUBMERGED_THRESHOLD     500
 #define UWB_ENMERGED_THRESHOLD      8000
 
+#define ID_STM32 0x01
+
 static uwb_context_t uwb;
 
 static uint32_t startup_moment      = 0;
 static uint32_t start_rare_moment   = 0;
 static uint32_t start_dense_moment  = 0;
 static uint32_t start_blink_moment  = 0;
+
+uint8_t str;
+uint8_t buff_uart[255];
+uint8_t cnt = 0;
 
 void uwb_init()
 {
@@ -160,5 +166,145 @@ void uwb_handle()
     }
 }
 
-void modbus_init() { }
+uint8_t GenCRC16(uint8_t* buff, size_t len)
+{
+    uint16_t crc = 0xFFFF;
+    uint16_t pos = 0;
+    uint8_t i = 0;
+    uint8_t lo = 0;
+    uint8_t hi = 0;
+
+    for (pos = 0; pos < len; pos++)
+    {
+        crc ^= buff[pos];
+
+        for (i = 8; i != 0; i--)
+        {
+            if ((crc & 0x0001) != 0)
+            {
+                crc >>= 1;
+                crc ^= 0xA001;
+            }
+            else
+                crc >>= 1;
+        }
+    }
+    lo = crc & 0xFF;
+    hi = (crc >> 8) & 0xFF;
+
+    buff[len++] = lo;
+    buff[len++] = hi;
+    return len;
+}
+//------------------------------------------------
+uint8_t CheckCRC16(uint8_t* buff, size_t len) {
+    uint16_t crc = 0xFFFF;
+    uint16_t pos = 0;
+    uint8_t i = 0;
+    uint8_t lo = 0;
+    uint8_t hi = 0;
+
+    for (pos = 0; pos < len - 2; pos++)
+    {
+        crc ^= buff[pos];
+
+        for (i = 8; i != 0; i--) {
+            if ((crc & 0x0001) != 0) {
+                crc >>= 1;
+                crc ^= 0xA001;
+            }
+            else
+                crc >>= 1;
+        }
+    }
+    lo = crc & 0xFF;
+    hi = (crc >> 8) & 0xFF;
+    if ((buff[len - 2] == lo) &&
+        (buff[len - 1] == hi)) {
+        return 1;
+    }
+    return 0;
+}
+
+void modbus_init() {
+    __HAL_TIM_CLEAR_FLAG(&htim6, TIM_SR_UIF);
+    HAL_UART_Receive_IT(&huart1, &str, 1);
+}
+
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+  {
+      //Прием байт по modbus
+    if(huart == &huart1) {
+        HAL_TIM_Base_Stop_IT(&htim6);
+        __HAL_TIM_SetCounter(&htim6, 0);
+        HAL_TIM_Base_Start_IT(&htim6);
+        buff_uart[cnt] = str;
+        cnt = cnt + 1;
+        HAL_UART_Receive_IT(&huart1, &str, 1);
+    }
+  }
+
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
+      // проверка окончания транзакция по modbus
+    if(htim->Instance == TIM6) {
+        uint16_t addr_var = 0;
+        uint16_t num_word = 0;
+        uint8_t addr_array = 0;
+
+        if (cnt > 4) {
+            HAL_TIM_Base_Stop_IT(&htim6);
+            __HAL_TIM_SetCounter(&htim6, 0); // сброс таймера
+
+            if (buff_uart[0] == ID_STM32 && CheckCRC16(buff_uart, cnt)) {
+                addr_var = (buff_uart[2] << 8) |  buff_uart[3];
+                num_word = (buff_uart[4] << 8) |  buff_uart[5];
+                buff_uart[2] = num_word * 2;
+                if (buff_uart[1] == 0x03) { // чтение
+                    for(uint16_t i = 0; i < num_word; i = i + 1) {
+                        switch (addr_var) {
+                            case 0x0001: // чтение темпы
+                                buff_uart[addr_array + 3] = 0x33;
+                                buff_uart[addr_array + 4] =  0x44;
+                                break;
+                            case 0x0002: // еще переменная
+                                buff_uart[addr_array + 3] = 0x33;
+                                buff_uart[addr_array + 4] = 0x44;
+                                break;
+                            case 0x0003: // еще переменная
+                                buff_uart[addr_array + 3] = 0x33;
+                                buff_uart[addr_array + 4] = 0x44;
+                                break;
+                            default:
+                                //ошибка
+                              break;
+                        }
+                        addr_var = addr_var + 1;
+                        addr_array = addr_array + 2;
+                    }
+
+                    cnt = GenCRC16(buff_uart, buff_uart[2] + 3);
+
+                } else if (buff_uart[1] == 0x06) { // запись
+                    //запись в в регистр
+                }
+
+            }
+
+            HAL_GPIO_WritePin(GPIOA, UART_DE_Pin, GPIO_PIN_SET); // активация передачи
+            HAL_UART_Transmit_IT(&huart1, buff_uart, cnt);
+        } else {
+            HAL_UART_Receive_IT(&huart1, &str, 1);
+        }
+        cnt = 0;
+    }
+}
+
+void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart) {
+    if(huart == &huart1) {
+      HAL_GPIO_WritePin(GPIOA, UART_DE_Pin, GPIO_PIN_RESET);
+      HAL_UART_Receive_IT(&huart1, &str, 1);
+      cnt = 0;
+    }
+}
+
 void modbus_handle() { }
