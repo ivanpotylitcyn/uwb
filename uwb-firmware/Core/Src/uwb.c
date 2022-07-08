@@ -48,9 +48,6 @@ void uwb_init()
     // Enable RS
     // ****************************************
 
-    HAL_GPIO_WritePin(EN_RS_GPIO_Port, EN_RS_Pin, GPIO_PIN_RESET);      // Open P-transistor
-    HAL_GPIO_WritePin(UART_DE_GPIO_Port, UART_DE_Pin, GPIO_PIN_RESET);  // Enable receiver / Disable transmitter
-
     modbus_init();
 
 

@@ -15,6 +15,8 @@ uint8_t CheckCRC16(uint8_t* buff, size_t len);
 
 void modbus_init()
 {
+    HAL_GPIO_WritePin(EN_RS_GPIO_Port, EN_RS_Pin, GPIO_PIN_RESET);      // Open P-transistor
+    HAL_GPIO_WritePin(UART_DE_GPIO_Port, UART_DE_Pin, GPIO_PIN_RESET);  // Enable receiver / Disable transmitter
     __HAL_TIM_CLEAR_FLAG(&htim6, TIM_SR_UIF);
     HAL_UART_Receive_IT(&huart1, &str, 1);
 }
@@ -51,6 +53,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
         return;
 
     if (cnt <= 4) {
+        cnt = 0;
+
         HAL_UART_Receive_IT(&huart1, &str, 1);
         return;
     }
