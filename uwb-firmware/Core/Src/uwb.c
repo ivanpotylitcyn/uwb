@@ -32,7 +32,7 @@ void uwb_init()
     // ****************************************
 
     HAL_GPIO_WritePin(EN_BQ_GPIO_Port, EN_BQ_Pin, GPIO_PIN_SET);		// Enable BQ
-    bq_init(&uwb.bq);
+    // bq_init(&uwb.bq);
 
 
     // ****************************************
