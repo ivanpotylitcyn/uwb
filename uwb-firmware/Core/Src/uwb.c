@@ -53,6 +53,7 @@ void uwb_init()
     // ****************************************
 
     HAL_GPIO_WritePin(EN_Hall_GPIO_Port, EN_Hall_Pin, GPIO_PIN_RESET);  // Enable Hall sensor
+    HAL_Delay(10);
     bme280_init();														// Initialize BME280
 }
 
@@ -76,6 +77,15 @@ void sensors_handle()
 void uwb_handle()
 {
     bq_handle(&uwb.bq);
+
+    // ****************************************
+    // Handle LED
+    // ****************************************
+
+    if (uwb.led_blink && HAL_GetTick() - start_blink_moment > UWB_BLINK_DELAY) {
+    	HAL_GPIO_TogglePin(light_LED_GPIO_Port, light_LED_Pin);
+    	start_blink_moment = HAL_GetTick();
+    }
 
 
     // ****************************************
@@ -152,4 +162,14 @@ void uwb_handle()
 void uwb_enable_led(bool enable)
 {
 	HAL_GPIO_WritePin(light_LED_GPIO_Port, light_LED_Pin, enable ? GPIO_PIN_SET : GPIO_PIN_RESET);
+}
+
+void uwb_enable_led_blink(bool enable)
+{
+	uwb.led_blink = enable;
+
+	if (enable)
+		start_blink_moment = HAL_GetTick();
+	else
+		HAL_GPIO_WritePin(light_LED_GPIO_Port, light_LED_Pin, GPIO_PIN_RESET);
 }

@@ -24,13 +24,15 @@ typedef enum {
     UWB_TEMPERATURE = 0x01,
     UWB_HUMIDITY    = 0x02,
     UWB_PRESSURE    = 0x03,
-    UWB_LED_TOGGLE    = 0x04,
+    UWB_LED_TOGGLE  = 0x04,
+	UWB_LED_BLINK	= 0x05,
 } uwb_modbus_register_t;
 
 typedef struct {
     uwb_mode_t          mode;
     uwb_state_t         state;
-    
+    bool				led_blink;
+
     bq_context_t        bq;
     bme280_context_t    bme280;
     ps_context_t        ps;
@@ -47,3 +49,5 @@ void modbus_init();
 void rs485_transmit(uint8_t* buff_uart, uint16_t cnt);
 
 void uwb_enable_led(bool enable);
+void uwb_enable_led_blink(bool enable);
+

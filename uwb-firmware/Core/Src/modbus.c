@@ -70,10 +70,10 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
     if (htim->Instance != TIM6) // Проверка завершения транзакции по modbus
         return;
 
-//    rs485_transmit(hello, sizeof(hello));
-
     if (cnt <= 4) {
         cnt = 0;
+
+//        HAL_UART_Receive_IT(&huart1, &str, 1);
         return;
     }
 
@@ -82,6 +82,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 
     if (buff_uart[0] != UWB_MODBUS_ID || !CheckCRC16(buff_uart, cnt)) {
         cnt = 0;
+
+//        HAL_UART_Receive_IT(&huart1, &str, 1);
         return;
     }
 
@@ -106,7 +108,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 					break;
 
                 case UWB_TEMPERATURE:
-                    register_value = (uint16_t)uwb.bme280.temperature;
+                    register_value = 0xABCD; // (uint16_t)uwb.bme280.temperature;
                     break;
 
                 case UWB_HUMIDITY:
@@ -139,6 +141,10 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
             case UWB_LED_TOGGLE:
                 uwb_enable_led(num_word);
                 break;
+
+            case UWB_LED_BLINK:
+            	uwb_enable_led_blink(num_word);
+            	break;
 
             default:
                 //ошибка
