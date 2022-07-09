@@ -44,3 +44,6 @@ void uwb_init();
 void uwb_handle();
 
 void modbus_init();
+void rs485_transmit(uint8_t* buff_uart, uint16_t cnt);
+
+void uwb_enable_led(bool enable);

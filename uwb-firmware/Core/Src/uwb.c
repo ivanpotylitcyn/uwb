@@ -37,18 +37,7 @@ void uwb_init()
     HAL_GPIO_WritePin(EN_6V0_GPIO_Port, EN_6V0_Pin, GPIO_PIN_SET);      // Enable 6V0
     HAL_GPIO_WritePin(EN_3V3_GPIO_Port, EN_3V3_Pin, GPIO_PIN_SET);      // Enable 3V3
     HAL_GPIO_WritePin(EN_5V0_GPIO_Port, EN_5V0_Pin, GPIO_PIN_SET);      // Enable 5V0
-
-//    HAL_GPIO_WritePin(EN_12LED_GPIO_Port, EN_12LED_Pin, GPIO_PIN_SET);  // Enable 12V0
-//    HAL_GPIO_TogglePin(light_LED_GPIO_Port, light_LED_Pin);
-
-    uint32_t toggle_start_moment = 0;
-
-//    while (1) {
-//    	if (HAL_GetTick() - toggle_start_moment < 500)
-//    		continue;
-//
-//        toggle_start_moment = HAL_GetTick();
-//    }
+    HAL_GPIO_WritePin(EN_12LED_GPIO_Port, EN_12LED_Pin, GPIO_PIN_SET);  // Enable 12V0
 
 
     // ****************************************
@@ -158,4 +147,9 @@ void uwb_handle()
     default:
         break;
     }
+}
+
+void uwb_enable_led(bool enable)
+{
+	HAL_GPIO_WritePin(light_LED_GPIO_Port, light_LED_Pin, enable ? GPIO_PIN_SET : GPIO_PIN_RESET);
 }

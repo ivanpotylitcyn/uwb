@@ -6,17 +6,15 @@
 #define MODBUS_READ     0x03
 #define MODBUS_WRITE    0x06
 
-#define LED_ON      HAL_GPIO_WritePin(EN_12LED_GPIO_Port, EN_12LED_Pin, GPIO_PIN_SET); \
-                    HAL_GPIO_WritePin(light_LED_GPIO_Port, light_LED_Pin, GPIO_PIN_SET)
-
-#define LED_OFF     HAL_GPIO_WritePin(EN_12LED_GPIO_Port, EN_12LED_Pin, GPIO_PIN_RESET); \
-                    HAL_GPIO_WritePin(light_LED_GPIO_Port, light_LED_Pin, GPIO_PIN_RESET)
+static volatile bool transmiting = false;
 
 static uint8_t str;
 static uint8_t buff_uart[255];
 static uint8_t cnt = 0;
 
 static uint16_t ping_counter = 0;
+
+static uint8_t hello[] = "Hello, ANTL! ";
 
 uint8_t GenCRC16(uint8_t* buff, size_t len);
 uint8_t CheckCRC16(uint8_t* buff, size_t len);
@@ -29,11 +27,22 @@ void modbus_init()
     HAL_UART_Receive_IT(&huart1, &str, 1);
 }
 
+void rs485_transmit(uint8_t* buff_uart, uint16_t cnt)
+{
+	transmiting = true;
+
+    HAL_GPIO_WritePin(UART_DE_GPIO_Port, UART_DE_Pin, GPIO_PIN_SET); // Activate RS485 TX
+    HAL_UART_Transmit_IT(&huart1, buff_uart, cnt);
+}
+
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
     if (huart != &huart1)
         return;
     
+    if (transmiting)
+    	return;
+
     HAL_TIM_Base_Stop_IT(&htim6);
     __HAL_TIM_SetCounter(&htim6, 0);
     HAL_TIM_Base_Start_IT(&htim6);
@@ -53,6 +62,7 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
     
     HAL_GPIO_WritePin(UART_DE_GPIO_Port, UART_DE_Pin, GPIO_PIN_RESET);  // Activate RS485 RX
     HAL_UART_Receive_IT(&huart1, &str, 1);
+    transmiting = false;
 }
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
@@ -60,10 +70,10 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
     if (htim->Instance != TIM6) // Проверка завершения транзакции по modbus
         return;
 
+//    rs485_transmit(hello, sizeof(hello));
+
     if (cnt <= 4) {
         cnt = 0;
-
-        HAL_UART_Receive_IT(&huart1, &str, 1);
         return;
     }
 
@@ -72,8 +82,6 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 
     if (buff_uart[0] != UWB_MODBUS_ID || !CheckCRC16(buff_uart, cnt)) {
         cnt = 0;
-
-        HAL_UART_Receive_IT(&huart1, &str, 1);
         return;
     }
 
@@ -125,16 +133,11 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 
         break;
 
-
     case MODBUS_WRITE:
         switch (register_address)
         {
             case UWB_LED_TOGGLE:
-                if (num_word == 0x01) {
-                    LED_ON;
-                } else {
-                    LED_OFF;
-                }
+                uwb_enable_led(num_word);
                 break;
 
             default:
@@ -148,8 +151,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
         break;
     }
 
-    HAL_GPIO_WritePin(UART_DE_GPIO_Port, UART_DE_Pin, GPIO_PIN_SET); // Activate RS485 TX
-    HAL_UART_Transmit_IT(&huart1, buff_uart, cnt);
+    rs485_transmit(buff_uart, cnt);
 }
 
 uint8_t GenCRC16(uint8_t* buff, size_t len)
