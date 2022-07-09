@@ -6,6 +6,12 @@
 #define MODBUS_READ     0x03
 #define MODBUS_WRITE    0x06
 
+#define LED_ON      HAL_GPIO_WritePin(EN_12LED_GPIO_Port, EN_12LED_Pin, GPIO_PIN_SET); \
+                    HAL_GPIO_WritePin(light_LED_GPIO_Port, light_LED_Pin, GPIO_PIN_SET)
+
+#define LED_OFF     HAL_GPIO_WritePin(EN_12LED_GPIO_Port, EN_12LED_Pin, GPIO_PIN_RESET); \
+                    HAL_GPIO_WritePin(light_LED_GPIO_Port, light_LED_Pin, GPIO_PIN_RESET)
+
 static uint8_t str;
 static uint8_t buff_uart[255];
 static uint8_t cnt = 0;
@@ -119,8 +125,23 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 
         break;
 
+
     case MODBUS_WRITE:
-        //запись в в регистр
+        switch (register_address)
+        {
+            case UWB_LED_TOGGLE:
+                if (num_word == 0x01) {
+                    LED_ON;
+                } else {
+                    LED_OFF;
+                }
+                break;
+
+            default:
+                //ошибка
+                break;
+        }
+
         break;
     
     default:

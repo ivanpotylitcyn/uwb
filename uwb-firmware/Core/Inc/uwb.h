@@ -24,6 +24,7 @@ typedef enum {
     UWB_TEMPERATURE = 0x01,
     UWB_HUMIDITY    = 0x02,
     UWB_PRESSURE    = 0x03,
+    UWB_LED_TOGGLE    = 0x04,
 } uwb_modbus_register_t;
 
 typedef struct {
