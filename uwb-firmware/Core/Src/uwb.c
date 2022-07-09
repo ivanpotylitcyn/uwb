@@ -1,8 +1,6 @@
 #include "uwb.h"
 #include "main.h"
 
-#define UWB_STARTUP_DELAY           5000
-
 #define UWB_RARE_DELAY              10000
 #define UWB_DENSE_DELAY             1000
 #define UWB_BLINK_DELAY             500
@@ -14,17 +12,14 @@
 
 uwb_context_t uwb;
 
-static uint32_t startup_moment      = 0;
 static uint32_t start_rare_moment   = 0;
 static uint32_t start_dense_moment  = 0;
 static uint32_t start_blink_moment  = 0;
 
 void uwb_init()
 {
-    uwb.mode = UWB_MODE_STARTUP;
+    uwb.mode = UWB_MODE_COMMAND;
     uwb.state = UWB_ONBOARD;
-
-    startup_moment = HAL_GetTick();
 
 
     // ****************************************
@@ -32,7 +27,7 @@ void uwb_init()
     // ****************************************
 
     HAL_GPIO_WritePin(EN_BQ_GPIO_Port, EN_BQ_Pin, GPIO_PIN_SET);		// Enable BQ
-    // bq_init(&uwb.bq);
+    bq_init(&uwb.bq);
 
 
     // ****************************************
@@ -43,11 +38,24 @@ void uwb_init()
     HAL_GPIO_WritePin(EN_3V3_GPIO_Port, EN_3V3_Pin, GPIO_PIN_SET);      // Enable 3V3
     HAL_GPIO_WritePin(EN_5V0_GPIO_Port, EN_5V0_Pin, GPIO_PIN_SET);      // Enable 5V0
 
+//    HAL_GPIO_WritePin(EN_12LED_GPIO_Port, EN_12LED_Pin, GPIO_PIN_SET);  // Enable 12V0
+//    HAL_GPIO_TogglePin(light_LED_GPIO_Port, light_LED_Pin);
+
+    uint32_t toggle_start_moment = 0;
+
+//    while (1) {
+//    	if (HAL_GetTick() - toggle_start_moment < 500)
+//    		continue;
+//
+//        toggle_start_moment = HAL_GetTick();
+//    }
+
 
     // ****************************************
     // Enable RS
     // ****************************************
 
+    HAL_GPIO_WritePin(EN_RS_GPIO_Port, EN_RS_Pin, GPIO_PIN_RESET);      // Open P-transistor
     modbus_init();
 
 
@@ -65,8 +73,10 @@ void sensors_handle()
     ps_read(&uwb.ps);
     uwb.water_sink = !HAL_GPIO_ReadPin(water_sens_GPIO_Port, water_sens_Pin);
 
-    if (uwb.state == UWB_ONBOARD && uwb.ps.pressure > UWB_SUBMERGED_THRESHOLD)
-        uwb.state = UWB_SUBMERGED;
+    if (uwb.state == UWB_ONBOARD && uwb.ps.pressure > UWB_SUBMERGED_THRESHOLD) {
+        uwb.mode = UWB_MODE_EMERGENCY;
+    	uwb.state = UWB_SUBMERGED;
+    }
 
     if (uwb.state == UWB_SUBMERGED && uwb.ps.pressure < UWB_ENMERGED_THRESHOLD) {
         HAL_GPIO_WritePin(EN_12LED_GPIO_Port, EN_12LED_Pin, GPIO_PIN_SET);
@@ -76,8 +86,11 @@ void sensors_handle()
 
 void uwb_handle()
 {
+    bq_handle(&uwb.bq);
+
+
     // ****************************************
-    // Handle Hall sensor
+    // Handle Hall sensor (got to sleep)
     // ****************************************
 
     if (!HAL_GPIO_ReadPin(go_to_sleep_GPIO_Port, go_to_sleep_Pin))
@@ -90,19 +103,8 @@ void uwb_handle()
 
     switch (uwb.mode)
     {
-    case UWB_MODE_STARTUP:
-        bq_handle(&uwb.bq);
-        sensors_handle();
-
-        if (HAL_GetTick() - startup_moment >= UWB_STARTUP_DELAY) {
-            HAL_GPIO_WritePin(EN_RS_GPIO_Port, EN_RS_Pin, GPIO_PIN_SET);        // Close P-transistor
-            uwb.mode = UWB_MODE_EMERGENCY;
-        }
-        break;
-
     case UWB_MODE_COMMAND:
-        bq_handle(&uwb.bq);
-        sensors_handle();
+    	sensors_handle();
         break;
 
     case UWB_MODE_EMERGENCY:
@@ -127,7 +129,6 @@ void uwb_handle()
         break;
 
     case UWB_MODE_SLEEP:
-        // Disable power
         HAL_GPIO_WritePin(EN_12LED_GPIO_Port, EN_12LED_Pin, GPIO_PIN_RESET);    // Disable 12LED
         HAL_GPIO_WritePin(EN_5V0_GPIO_Port, EN_5V0_Pin, GPIO_PIN_RESET);        // Disable 5V0
         HAL_GPIO_WritePin(EN_3V3_GPIO_Port, EN_3V3_Pin, GPIO_PIN_RESET);        // Disable 3V3

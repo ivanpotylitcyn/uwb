@@ -6,8 +6,7 @@
 //#include "modbus.h"
 
 typedef enum {
-    UWB_MODE_STARTUP = 0,
-    UWB_MODE_SLEEP,
+    UWB_MODE_SLEEP = 0,
     UWB_MODE_COMMAND,
     UWB_MODE_EMERGENCY,
 } uwb_mode_t;
@@ -21,6 +20,7 @@ typedef enum {
 #define UWB_MODBUS_ID 0x42
 
 typedef enum {
+    UWB_PING        = 0x00,
     UWB_TEMPERATURE = 0x01,
     UWB_HUMIDITY    = 0x02,
     UWB_PRESSURE    = 0x03,
