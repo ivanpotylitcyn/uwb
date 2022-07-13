@@ -12,9 +12,12 @@
 
 uwb_context_t uwb;
 
+extern I2C_HandleTypeDef hi2c2;
+
 static uint32_t start_rare_moment   = 0;
 static uint32_t start_dense_moment  = 0;
 static uint32_t start_blink_moment  = 0;
+
 
 void uwb_init()
 {
@@ -55,6 +58,7 @@ void uwb_init()
     HAL_GPIO_WritePin(EN_Hall_GPIO_Port, EN_Hall_Pin, GPIO_PIN_RESET);  // Enable Hall sensor
     HAL_Delay(10);
     bme280_init();														// Initialize BME280
+    HAL_Delay(10);
 }
 
 void sensors_handle()
@@ -161,12 +165,20 @@ void uwb_handle()
 
 void uwb_enable_led(bool enable)
 {
+    if (uwb.led_blink) {
+        return;
+    }
+    uwb.led_toggle = enable;
 	HAL_GPIO_WritePin(light_LED_GPIO_Port, light_LED_Pin, enable ? GPIO_PIN_SET : GPIO_PIN_RESET);
 }
 
 void uwb_enable_led_blink(bool enable)
 {
-	uwb.led_blink = enable;
+    if (uwb.led_toggle) {
+        return;
+    }
+
+    uwb.led_blink = enable;
 
 	if (enable)
 		start_blink_moment = HAL_GetTick();

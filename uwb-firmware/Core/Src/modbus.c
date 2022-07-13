@@ -108,7 +108,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 					break;
 
                 case UWB_TEMPERATURE:
-                    register_value = 0xABCD; // (uint16_t)uwb.bme280.temperature;
+                    register_value = (uint16_t)uwb.bme280.temperature;
                     break;
 
                 case UWB_HUMIDITY:
@@ -117,6 +117,14 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 
                 case UWB_PRESSURE:
                     register_value = (uint16_t)uwb.bme280.pressure;
+                    break;
+
+                case UWB_LED_TOGGLE:
+                    register_value = (uint16_t)uwb.led_toggle;
+                    break;
+
+                case UWB_LED_BLINK:
+                    register_value = (uint16_t)uwb.ps.pressure;
                     break;
 
                 default:

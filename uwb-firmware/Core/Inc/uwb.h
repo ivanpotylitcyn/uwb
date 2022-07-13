@@ -31,7 +31,8 @@ typedef enum {
 typedef struct {
     uwb_mode_t          mode;
     uwb_state_t         state;
-    bool				led_blink;
+    bool				led_toggle;
+    bool                led_blink;
 
     bq_context_t        bq;
     bme280_context_t    bme280;
