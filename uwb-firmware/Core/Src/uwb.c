@@ -58,6 +58,7 @@ void uwb_init()
     HAL_GPIO_WritePin(EN_Hall_GPIO_Port, EN_Hall_Pin, GPIO_PIN_RESET);  // Enable Hall sensor
     HAL_Delay(10);
     bme280_init();														// Initialize BME280
+    ads122_init();
     HAL_Delay(10);
 }
 
