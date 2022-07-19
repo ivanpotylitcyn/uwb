@@ -59,6 +59,7 @@ void Error_Handler(void);
 /* Private defines -----------------------------------------------------------*/
 #define WAKE_OPTO_Pin GPIO_PIN_0
 #define WAKE_OPTO_GPIO_Port GPIOA
+#define WAKE_OPTO_EXTI_IRQn EXTI0_1_IRQn
 #define IOUT_bat_Pin GPIO_PIN_1
 #define IOUT_bat_GPIO_Port GPIOA
 #define ACOK_bat_Pin GPIO_PIN_2

@@ -5,18 +5,20 @@
 #define UWB_DENSE_DELAY             1000
 #define UWB_BLINK_DELAY             500
 
-#define UWB_SUBMERGED_THRESHOLD     500
-#define UWB_ENMERGED_THRESHOLD      8000
+#define UWB_SUBMERGED_THRESHOLD     25000 // Под водой
+#define UWB_ENMERGED_THRESHOLD      20000 // Всплыли
 
 #define ID_STM32 0x01
 
 uwb_context_t uwb;
 
-extern I2C_HandleTypeDef hi2c2;
+extern UART_HandleTypeDef huart1;
 
 static uint32_t start_rare_moment   = 0;
 static uint32_t start_dense_moment  = 0;
 static uint32_t start_blink_moment  = 0;
+
+static uint8_t cnt_mask = 0;
 
 
 void uwb_init()
@@ -24,13 +26,22 @@ void uwb_init()
     uwb.mode = UWB_MODE_COMMAND;
     uwb.state = UWB_ONBOARD;
 
+    uwb.bitrate_rs485 = (uwb.bitrate_rs485) ? uwb.bitrate_rs485 : huart1.Init.BaudRate;
+
+    TIM6->ARR = (uint32_t)((30000000 / uwb.bitrate_rs485));
+
+    uwb.ledrate = (uwb.ledrate) ? uwb.ledrate : UWB_BLINK_DELAY;
+    uwb.press_rtig1 = (uwb.press_rtig1) ? uwb.press_rtig1 : UWB_SUBMERGED_THRESHOLD;
+    uwb.press_rtig2 = (uwb.press_rtig2) ? uwb.bitrate_rs485 : UWB_ENMERGED_THRESHOLD;
+
+    uwb.led_mask = (uwb.led_mask) ? uwb.led_mask : 0xAAAAAAAAAAAAAAAA;
 
     // ****************************************
     // Enable BQ
     // ****************************************
 
     HAL_GPIO_WritePin(EN_BQ_GPIO_Port, EN_BQ_Pin, GPIO_PIN_SET);		// Enable BQ
-    bq_init(&uwb.bq);
+    //bq_init(&uwb.bq);
 
 
     // ****************************************
@@ -68,27 +79,31 @@ void sensors_handle()
     ps_read(&uwb.ps);
     uwb.water_sink = !HAL_GPIO_ReadPin(water_sens_GPIO_Port, water_sens_Pin);
 
-    if (uwb.state == UWB_ONBOARD && uwb.ps.pressure > UWB_SUBMERGED_THRESHOLD) {
+    if (uwb.state == UWB_ONBOARD && uwb.ps.pressure > uwb.press_rtig1) {
         uwb.mode = UWB_MODE_EMERGENCY;
+        start_dense_moment = HAL_GetTick();
     	uwb.state = UWB_SUBMERGED;
     }
 
-    if (uwb.state == UWB_SUBMERGED && uwb.ps.pressure < UWB_ENMERGED_THRESHOLD) {
-        HAL_GPIO_WritePin(EN_12LED_GPIO_Port, EN_12LED_Pin, GPIO_PIN_SET);
+    if (uwb.state == UWB_SUBMERGED && uwb.ps.pressure < uwb.press_rtig2) {
         uwb.state = UWB_ENMERGED;
+        cnt_mask = 0;
+        uwb.led_toggle = 0;
+        uwb.led_blink = 0;
     }
 }
 
 void uwb_handle()
 {
-    bq_handle(&uwb.bq);
+    //bq_handle(&uwb.bq);
 
     // ****************************************
     // Handle LED
     // ****************************************
 
-    if (uwb.led_blink && HAL_GetTick() - start_blink_moment > UWB_BLINK_DELAY) {
-    	HAL_GPIO_TogglePin(light_LED_GPIO_Port, light_LED_Pin);
+    if (uwb.state != UWB_ENMERGED && uwb.led_blink && HAL_GetTick() - start_blink_moment > uwb.ledrate) {
+        HAL_GPIO_WritePin(light_LED_GPIO_Port, light_LED_Pin, (((uint64_t)0x01 << (cnt_mask & 0x3F)) & uwb.led_mask) ? GPIO_PIN_SET : GPIO_PIN_RESET);
+        cnt_mask++;
     	start_blink_moment = HAL_GetTick();
     }
 
@@ -124,8 +139,9 @@ void uwb_handle()
             sensors_handle();
         }
 
-        if (uwb.state == UWB_ENMERGED && HAL_GetTick() - start_blink_moment > UWB_BLINK_DELAY) {
-            HAL_GPIO_TogglePin(light_LED_GPIO_Port, light_LED_Pin);
+        if (uwb.state == UWB_ENMERGED && HAL_GetTick() - start_blink_moment > uwb.ledrate) {
+            HAL_GPIO_WritePin(light_LED_GPIO_Port, light_LED_Pin, (((uint64_t)0x01 << (cnt_mask & 0x3F)) & uwb.led_mask) ? GPIO_PIN_SET : GPIO_PIN_RESET);
+            cnt_mask++;
             start_blink_moment = HAL_GetTick();
 
             sensors_handle();
@@ -150,12 +166,7 @@ void uwb_handle()
 
         HAL_ResumeTick();                                                       // Enable tick interrupt
 
-        HAL_GPIO_WritePin(EN_5V0_GPIO_Port, EN_5V0_Pin, GPIO_PIN_SET);          // Enable 5V0
-        HAL_GPIO_WritePin(EN_3V3_GPIO_Port, EN_3V3_Pin, GPIO_PIN_SET);          // Enable 3V3
-        HAL_GPIO_WritePin(EN_6V0_GPIO_Port, EN_6V0_Pin, GPIO_PIN_SET);          // Enable 6V0
-
-        uwb.mode = UWB_MODE_EMERGENCY;
-        uwb.state = UWB_ONBOARD;
+        uwb_init();
 
         break;
 
@@ -164,25 +175,30 @@ void uwb_handle()
     }
 }
 
-void uwb_enable_led(bool enable)
+bool uwb_enable_led(bool enable)
 {
-    if (uwb.led_blink) {
-        return;
+    if (uwb.led_blink || uwb.state == UWB_ENMERGED) {
+        return 0;
     }
     uwb.led_toggle = enable;
 	HAL_GPIO_WritePin(light_LED_GPIO_Port, light_LED_Pin, enable ? GPIO_PIN_SET : GPIO_PIN_RESET);
+
+	return 1;
 }
 
-void uwb_enable_led_blink(bool enable)
+bool uwb_enable_led_blink(bool enable)
 {
-    if (uwb.led_toggle) {
-        return;
+    if (uwb.led_toggle || uwb.state == UWB_ENMERGED) {
+        return 0;
     }
 
+    cnt_mask = 0;
     uwb.led_blink = enable;
 
 	if (enable)
 		start_blink_moment = HAL_GetTick();
 	else
 		HAL_GPIO_WritePin(light_LED_GPIO_Port, light_LED_Pin, GPIO_PIN_RESET);
+
+	return 1;
 }
