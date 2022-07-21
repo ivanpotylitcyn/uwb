@@ -9,9 +9,11 @@ Underwater Beacon
 ### Быстрый старт
 
 Окно настройки подлключения modbus.
+
 ![image info](./pictures/modbus_setting.png)
 
 Результат настройки.
+
 ![image info](./pictures/modbus_start.png)
 
 # Регистры Modbus
