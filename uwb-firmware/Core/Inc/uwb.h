@@ -40,21 +40,22 @@ typedef enum {
 	UWB_LED_BLINK	    = 0x0F,
 	UWB_RESET           = 0x10,
 	UWB_RESTART         = 0x11,
+	UWB_SAVE_FLSH       = 0x12,
 } uwb_modbus_register_t;
 
 typedef struct {
-    uwb_mode_t          mode;
-    uwb_state_t         state;
-
-    bool				led_toggle;
-    bool                led_blink;
-
-    uint32_t            bitrate_rs485;
-    uint16_t            ledrate;
-    uint16_t            press_rtig1;
-    uint16_t            press_rtig2;
 
     uint64_t            led_mask;
+    uint16_t            press_rtig1;
+    uint16_t            press_rtig2;
+    uint32_t            bitrate_rs485;
+    uint16_t            ledrate;
+
+    bool                led_toggle;
+    bool                led_blink;
+
+    uwb_mode_t          mode;
+    uwb_state_t         state;
 
     bq_context_t        bq;
     bme280_context_t    bme280;
@@ -67,6 +68,10 @@ extern uwb_context_t uwb;
 
 void uwb_init();
 void uwb_handle();
+void write_flash();
+void switch_RS485();
+void read_flash();
+void TM_CRC_INIT();
 
 void modbus_init();
 void rs485_transmit(uint8_t* buff_uart, uint16_t cnt);

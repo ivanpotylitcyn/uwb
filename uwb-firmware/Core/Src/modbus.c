@@ -12,11 +12,11 @@ static volatile bool transmiting = false;
 static uint8_t str;
 static uint8_t buff_uart[255];
 static uint8_t cnt = 0;
-
+static uint8_t change = 0;
 static uint16_t ping_counter = 0;
 
-uint8_t GenCRC16(uint8_t* buff, size_t len);
-uint8_t CheckCRC16(uint8_t* buff, size_t len);
+uint8_t GenCRC16(uint8_t* arr, uint32_t count);
+uint8_t CheckCRC16(uint8_t* arr, uint32_t count);
 
 void modbus_init()
 {
@@ -60,13 +60,7 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
     cnt = 0;
     
     if (USART1 -> BRR != UART_DIV_SAMPLING16(REF_CLK, uwb.bitrate_rs485)) {
-        USART1 -> CR1 &= ~(USART_CR1_UE);
-        USART1 -> BRR = UART_DIV_SAMPLING16(REF_CLK, uwb.bitrate_rs485);
-        USART1 -> CR1 |= USART_CR1_UE;
-
-        TIM6->CR1 &= ~(TIM_CR1_CEN);
-        TIM6->ARR = (uint32_t)((30000000 / uwb.bitrate_rs485));
-        TIM6->CR1 |= TIM_CR1_CEN;
+        switch_RS485();
     }
 
     HAL_GPIO_WritePin(UART_DE_GPIO_Port, UART_DE_Pin, GPIO_PIN_RESET);  // Activate RS485 RX
@@ -76,11 +70,12 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
-    HAL_TIM_Base_Stop_IT(&htim6);
-    __HAL_TIM_SetCounter(&htim6, 0); // сброс таймера
 
     if (htim->Instance != TIM6) // Проверка завершения транзакции по modbus
         return;
+
+    HAL_TIM_Base_Stop_IT(&htim6);
+    __HAL_TIM_SetCounter(&htim6, 0); // сброс таймера
 
     if (cnt <= 4) {
         cnt = 0;
@@ -217,6 +212,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 
             case UWB_LEDRATE:
                 uwb.ledrate = num_word;
+                change = 1;
                 break;
 
             case UWB_PRESS_TRIG_1:
@@ -226,6 +222,32 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
             case UWB_PRESS_TRIG_2:
                 uwb.press_rtig2 = num_word;
                 break;
+
+
+            case UWB_MASK_LED_H1:
+                uwb.led_mask &= ~(((uint64_t)0xFFFF) << 48);
+                uwb.led_mask |= ((uint64_t)num_word) << 48;
+
+                break;
+
+            case UWB_MASK_LED_L1:
+                uwb.led_mask &= ~(((uint64_t)0xFFFF) << 32);
+                uwb.led_mask |= ((uint64_t)num_word) << 32;
+
+                break;
+
+            case UWB_MASK_LED_H0:
+                uwb.led_mask &= ~(((uint64_t)0xFFFF) << 16);
+                uwb.led_mask |= ((uint64_t)num_word) << 16;
+
+                break;
+
+            case UWB_MASK_LED_L0:
+                uwb.led_mask &= ~((uint64_t)0xFFFF);
+                uwb.led_mask |= (uint64_t)num_word;
+
+                break;
+
 
             case UWB_RESET:
                 if (num_word) {
@@ -238,6 +260,13 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
                     uwb.mode = UWB_MODE_COMMAND;
                     uwb.state = UWB_ONBOARD;
                     uwb_enable_led(0);
+                    uwb_enable_led_blink(0);
+                }
+                break;
+
+            case UWB_SAVE_FLSH:
+                if (num_word) {
+                    write_flash();
                 }
                 break;
 
@@ -248,7 +277,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 
         if (!success) {
             buff_uart[1] |= (buff_uart[1] | 0x80);
-            buff_uart[1] = 0x01;
+            buff_uart[2] = 0x01;
             cnt = GenCRC16(buff_uart, 3);
         }
 
@@ -287,69 +316,67 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
     rs485_transmit(buff_uart, cnt);
 }
 
-uint8_t GenCRC16(uint8_t* buff, size_t len)
+uint8_t GenCRC16(uint8_t* arr, uint32_t count)
 {
-    uint16_t crc = 0xFFFF;
-    uint16_t pos = 0;
-    uint8_t i = 0;
-    uint8_t lo = 0;
-    uint8_t hi = 0;
+    CRC->CR |= CRC_CR_RESET;
 
-    for (pos = 0; pos < len; pos++)
-    {
-        crc ^= buff[pos];
+    uint32_t cnt;
 
-        for (i = 8; i != 0; i--)
-        {
-            if ((crc & 0x0001) != 0) {
-                crc >>= 1;
-                crc ^= 0xA001;
-            }
-            else {
-                crc >>= 1;
-            }
-        }
+    /* Calculate number of 32-bit blocks */
+    cnt = count >> 2;
+
+    /* Calculate */
+    while (cnt--) {
+        /* Set new value */
+        CRC->DR = arr[3] + (arr[2] << 8) + (arr[1] << 16) + (arr[0] << 24);
+
+        /* Increase by 4 */
+        arr += 4;
     }
 
-    lo = crc & 0xFF;
-    hi = (crc >> 8) & 0xFF;
+    /* Calculate remaining data as 8-bit */
+    cnt = count % 4;
 
-    buff[len++] = lo;
-    buff[len++] = hi;
+    /* Calculate */
+    while (cnt--) {
+        /* Set new value */
+        *((uint8_t *)&CRC->DR) = *arr++;
+    }
 
-    return len;
+    *arr++ = (uint8_t)CRC->DR;
+    *arr++ = (uint8_t)(CRC->DR >> 8);
+
+    return count + 2;
 }
 
-uint8_t CheckCRC16(uint8_t* buff, size_t len)
+uint8_t CheckCRC16(uint8_t* arr, uint32_t count)
 {
-    uint16_t crc = 0xFFFF;
-    uint16_t pos = 0;
-    uint8_t i = 0;
-    uint8_t lo = 0;
-    uint8_t hi = 0;
 
-    for (pos = 0; pos < len - 2; pos++)
-    {
-        crc ^= buff[pos];
+    CRC->CR |= CRC_CR_RESET;
 
-        for (i = 8; i != 0; i--)
-        {
-            if ((crc & 0x0001) != 0)
-            {
-                crc >>= 1;
-                crc ^= 0xA001;
-            }
-            else {
-                crc >>= 1;
-            }
-        }
+    uint32_t cnt;
+
+    /* Calculate number of 32-bit blocks */
+    cnt = count >> 2;
+
+    /* Calculate */
+    while (cnt--) {
+        /* Set new value */
+        CRC->DR = arr[3] + (arr[2] << 8) + (arr[1] << 16) + (arr[0] << 24);
+
+        /* Increase by 4 */
+        arr += 4;
     }
 
-    lo = crc & 0xFF;
-    hi = (crc >> 8) & 0xFF;
+    /* Calculate remaining data as 8-bit */
+    cnt = count % 4;
 
-    if ((buff[len - 2] == lo) && (buff[len - 1] == hi))
-        return 1;
+    /* Calculate */
+    while (cnt--) {
+        /* Set new value */
+        *((uint8_t *)&CRC->DR) = *arr++;
+    }
 
-    return 0;
+    if (CRC->DR) return 0;
+    else return 1;
 }

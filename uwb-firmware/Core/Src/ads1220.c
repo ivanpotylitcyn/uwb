@@ -164,7 +164,7 @@ void ads_powerdown(void) {
 }
 //------------------------------------------------
 
-void ads122_init(void) {
+void ADS122_init(void) {
 
   HAL_GPIO_WritePin(nRESET_MD_GPIO_Port, nRESET_MD_Pin, GPIO_PIN_SET);
 
