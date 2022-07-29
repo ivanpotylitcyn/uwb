@@ -6,17 +6,34 @@
 #define MODBUS_READ             0x03
 #define MODBUS_WRITE            0x06
 #define MODBUS_WRITE_MULTIPLE   0x10
+#define ModBusRegsCnt           30
 
 static volatile bool transmiting = false;
 
 static uint8_t str;
 static uint8_t buff_uart[255];
 static uint8_t cnt = 0;
-static uint8_t change = 0;
 static uint16_t ping_counter = 0;
 
 uint8_t GenCRC16(uint8_t* arr, uint32_t count);
 uint8_t CheckCRC16(uint8_t* arr, uint32_t count);
+
+uint16_t *ModBusRegs[ModBusRegsCnt] = {
+                                        (uint16_t *)&(uwb.ping),
+                                        (uint16_t *)&(uwb.bme280.temperature),
+                                        (uint16_t *)&(uwb.bme280.humidity),
+                                        (uint16_t *)&(uwb.bme280.pressure),
+                                        (uint16_t *)&(uwb.ps.pressure),
+                                        (uint16_t *)&(uwb.press_rtig1),
+                                        (uint16_t *)&(uwb.press_rtig2),
+                                        (uint16_t *)&(uwb.bitrate_rs485)+1, ((uint16_t *)&(uwb.bitrate_rs485)),
+                                        (uint16_t *)&(uwb.led_mask)+3, (uint16_t *)&(uwb.led_mask)+2, (uint16_t *)&(uwb.led_mask)+1, (uint16_t *)&(uwb.led_mask),
+                                        (uint16_t *)&(uwb.ledrate),
+                                        (uint16_t *)&(uwb.led_toggle),
+                                        (uint16_t *)&(uwb.led_blink),
+                                        (uint16_t *)&(uwb.water_sink),
+                                        0,0,0
+        };
 
 void modbus_init()
 {
@@ -92,110 +109,28 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
         return;
     }
 
-    uwb_modbus_register_t register_address = (buff_uart[2] << 8) |  buff_uart[3];
-    uint16_t register_value;
-
-    uint16_t num_word = (buff_uart[4] << 8) |  buff_uart[5];
-    uint8_t addr_array = 0;
+    uwb_modbus_register_t register_address = (((uint16_t)buff_uart[2]) << 8) | ((uint16_t)buff_uart[3]);
+    uint16_t num_word = (((uint16_t)buff_uart[4]) << 8) | ((uint16_t)buff_uart[5]);
 
     bool success = 1;
 
     switch (buff_uart[1])
     {
     case MODBUS_READ:
-        for (uint16_t i = 0; i < num_word; i++)
-        {
-            switch (register_address)
-            {
-				case UWB_PING:
-					register_value = ping_counter;
-					ping_counter++;
-					break;
 
-                case UWB_TEMPERATURE:
-                    register_value = (uint16_t)uwb.bme280.temperature;
-                    break;
-
-                case UWB_HUMIDITY:
-                    register_value = (uint16_t)uwb.bme280.humidity;
-                    break;
-
-                case UWB_PRESSURE:
-                    register_value = (uint16_t)uwb.bme280.pressure;
-                    break;
-
-                case UWB_PRESSURE_ADS:
-                    register_value = (uint16_t)uwb.ps.pressure;
-                    break;
-
-                case UWB_BITRATE_RS485_H:
-                    register_value= (uint16_t)((uwb.bitrate_rs485) >> 16);
-                    break;
-
-                case UWB_BITRATE_RS485_L:
-                    register_value = (uint16_t)uwb.bitrate_rs485;
-                    break;
-
-                case UWB_MASK_LED_H1:
-                    register_value= (uint16_t)((uwb.led_mask) >> 48);
-                    break;
-
-                case UWB_MASK_LED_L1:
-                    register_value = (uint16_t)((uwb.led_mask) >> 32);
-                    break;
-
-                case UWB_MASK_LED_H0:
-                    register_value= (uint16_t)((uwb.led_mask) >> 16);
-                    break;
-
-                case UWB_MASK_LED_L0:
-
-                    register_value = (uint16_t)uwb.led_mask;
-                    break;
-
-                case UWB_LEDRATE:
-                    register_value = (uint16_t)uwb.ledrate;
-                    break;
-
-                case UWB_PRESS_TRIG_1:
-                    register_value = (uint16_t)uwb.press_rtig1;
-                    break;
-
-                case UWB_PRESS_TRIG_2:
-                    register_value = (uint16_t)uwb.press_rtig2;
-                    break;
-
-                case UWB_LED_TOGGLE:
-                    register_value = (uint16_t)uwb.led_toggle;
-                    break;
-
-                case UWB_LED_BLINK:
-                    register_value = (uint16_t)uwb.led_blink;
-                    break;
-
-                case UWB_RESET:
-                    register_value = 0;
-                    break;
-
-                case UWB_RESTART:
-                    register_value = 0;
-                    break;
-
-                default:
-                	register_value = 0xff;
-                    break;
+        if ((register_address + num_word) <= ModBusRegsCnt) {
+            uint8_t ModBusTX_Cnt = 2;
+            buff_uart[ModBusTX_Cnt++] = (uint8_t)(num_word*2);
+            if ((register_address) == 0) {
+              uwb.ping = ping_counter++;
             }
-
-            buff_uart[addr_array + 3] = (uint8_t)(register_value >> 8);
-            buff_uart[addr_array + 4] = (uint8_t)(register_value);
-
-            register_address++;
-            addr_array += 2;
+            for (int i = 0; i < num_word; i++) {
+                uint16_t Val = *ModBusRegs[register_address+i];
+                buff_uart[ModBusTX_Cnt++] = (Val >> 8) & 0xFF;
+                buff_uart[ModBusTX_Cnt++] =  Val  & 0xFF;
+            }
+                cnt = GenCRC16(buff_uart, buff_uart[2] + 3);
         }
-
-        buff_uart[2] = num_word * 2;
-
-        cnt = GenCRC16(buff_uart, buff_uart[2] + 3);
 
         break;
 
@@ -212,7 +147,6 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 
             case UWB_LEDRATE:
                 uwb.ledrate = num_word;
-                change = 1;
                 break;
 
             case UWB_PRESS_TRIG_1:
@@ -380,3 +314,94 @@ uint8_t CheckCRC16(uint8_t* arr, uint32_t count)
     if (CRC->DR) return 0;
     else return 1;
 }
+
+
+//for (uint16_t i = 0; i < num_word; i++)
+//                {
+//                    switch (register_address)
+//                    {
+//                      case UWB_PING:
+//                          uwb.ping = ping_counter;
+//                          ping_counter++;
+//                          break;
+//
+//                        case UWB_TEMPERATURE:
+//                            register_value = (uint16_t)uwb.bme280.temperature;
+//                            break;
+//
+//                        case UWB_HUMIDITY:
+//                            register_value = (uint16_t)uwb.bme280.humidity;
+//                            break;
+//
+//                        case UWB_PRESSURE:
+//                            register_value = (uint16_t)uwb.bme280.pressure;
+//                            break;
+//
+//                        case UWB_PRESSURE_ADS:
+//                            register_value = (uint16_t)uwb.ps.pressure;
+//                            break;
+//
+//                        case UWB_BITRATE_RS485_H:
+//                            register_value= (uint16_t)((uwb.bitrate_rs485) >> 16);
+//                            break;
+//
+//                        case UWB_BITRATE_RS485_L:
+//                            register_value = (uint16_t)uwb.bitrate_rs485;
+//                            break;
+//
+//                        case UWB_MASK_LED_H1:
+//                            register_value= (uint16_t)((uwb.led_mask) >> 48);
+//                            break;
+//
+//                        case UWB_MASK_LED_L1:
+//                            register_value = (uint16_t)((uwb.led_mask) >> 32);
+//                            break;
+//
+//                        case UWB_MASK_LED_H0:
+//                            register_value= (uint16_t)((uwb.led_mask) >> 16);
+//                            break;
+//
+//                        case UWB_MASK_LED_L0:
+//
+//                            register_value = (uint16_t)uwb.led_mask;
+//                            break;
+//
+//                        case UWB_LEDRATE:
+//                            register_value = (uint16_t)uwb.ledrate;
+//                            break;
+//
+//                        case UWB_PRESS_TRIG_1:
+//                            register_value = (uint16_t)uwb.press_rtig1;
+//                            break;
+//
+//                        case UWB_PRESS_TRIG_2:
+//                            register_value = (uint16_t)uwb.press_rtig2;
+//                            break;
+//
+//                        case UWB_LED_TOGGLE:
+//                            register_value = (uint16_t)uwb.led_toggle;
+//                            break;
+//
+//                        case UWB_LED_BLINK:
+//                            register_value = (uint16_t)uwb.led_blink;
+//                            break;
+//
+//                        default:
+//                          register_value = 0xff;
+//                            break;
+//                    }
+//
+//                    buff_uart[addr_array + 3] = (uint8_t)(register_value >> 8);
+//                    buff_uart[addr_array + 4] = (uint8_t)(register_value);
+//
+//                    register_address++;
+//                    addr_array += 2;
+//                }
+//
+//                buff_uart[2] = num_word * 2;
+//
+//                cnt = GenCRC16(buff_uart, buff_uart[2] + 3);
+
+
+
+

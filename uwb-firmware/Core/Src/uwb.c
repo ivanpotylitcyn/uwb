@@ -52,6 +52,11 @@ void read_flash() {
         for (uint16_t i=0; i < 6; ++i) {                                  // В цикле производим чтение
                 *(dest_adr + i) = *(__IO uint32_t*)(source_adr + i);      // Само чтение
         }
+        uwb.bitrate_rs485 = BITRATE_RS485;
+        uwb.press_rtig1 = UWB_SUBMERGED_THRESHOLD;
+        uwb.press_rtig2 = UWB_ENMERGED_THRESHOLD;
+        uwb.led_mask = LEDMASK;
+        uwb.ledrate = UWB_BLINK_DELAY;
     } else {
         uwb.bitrate_rs485 = BITRATE_RS485;
         uwb.press_rtig1 = UWB_SUBMERGED_THRESHOLD;
@@ -131,8 +136,8 @@ void uwb_init()
 
 void sensors_handle()
 {
-    bme280_read(&uwb.bme280);
-    ps_read(&uwb.ps);
+    //bme280_read(&uwb.bme280);
+    //ps_read(&uwb.ps);
     uwb.water_sink = !HAL_GPIO_ReadPin(water_sens_GPIO_Port, water_sens_Pin);
 
     if (uwb.state == UWB_ONBOARD && uwb.ps.pressure > uwb.press_rtig1) {

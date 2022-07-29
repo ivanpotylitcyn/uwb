@@ -38,9 +38,10 @@ typedef enum {
     UWB_LEDRATE         = 0x0D,
     UWB_LED_TOGGLE      = 0x0E,
 	UWB_LED_BLINK	    = 0x0F,
-	UWB_RESET           = 0x10,
-	UWB_RESTART         = 0x11,
-	UWB_SAVE_FLSH       = 0x12,
+	UWB_WATER_SINK      = 0x10,
+	UWB_RESET           = 0x11,
+	UWB_RESTART         = 0x12,
+	UWB_SAVE_FLSH       = 0x13,
 } uwb_modbus_register_t;
 
 typedef struct {
@@ -51,8 +52,10 @@ typedef struct {
     uint32_t            bitrate_rs485;
     uint16_t            ledrate;
 
-    bool                led_toggle;
-    bool                led_blink;
+    uint16_t            led_toggle;
+    uint16_t            led_blink;
+
+    uint16_t            ping;
 
     uwb_mode_t          mode;
     uwb_state_t         state;
@@ -61,7 +64,7 @@ typedef struct {
     bme280_context_t    bme280;
     ps_context_t        ps;
     
-    bool                water_sink;
+    uint16_t            water_sink;
 } uwb_context_t;
 
 extern uwb_context_t uwb;
