@@ -110,9 +110,9 @@ typedef struct {
 } BME280_CalibData;
 
 typedef struct {
-    float pressure;
-    float humidity;
-    float temperature;
+    uint16_t pressure;
+    uint16_t humidity;
+    uint16_t temperature;
 } bme280_context_t;
 
 void bme280_init(void);
