@@ -53,10 +53,10 @@ typedef struct {
     uint16_t            ledrate; // 2
     uint16_t            chekCRC16; // 2
 
+    uint16_t            ping;
+
     uint16_t            led_toggle;
     uint16_t            led_blink;
-
-    uint16_t            ping;
 
     uwb_mode_t          mode;
     uwb_state_t         state;
@@ -80,6 +80,6 @@ void TM_CRC_INIT();
 void modbus_init();
 void rs485_transmit(uint8_t* buff_uart, uint16_t cnt);
 
-bool uwb_enable_led(bool enable);
-bool uwb_enable_led_blink(bool enable);
+bool uwb_enable_led(uint16_t enable);
+bool uwb_enable_led_blink(uint16_t enable);
 

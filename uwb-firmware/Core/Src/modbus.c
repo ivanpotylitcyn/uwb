@@ -129,7 +129,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
               uwb.ping = ping_counter++;
             }
             for (int i = 0; i < num_word; i++) {
-                uint16_t Val = *ModBusRegs[register_address+i];
+                uint16_t Val = (uint16_t)*ModBusRegs[register_address+i];
                 buff_uart[ModBusTX_Cnt++] = (Val >> 8) & 0xFF;
                 buff_uart[ModBusTX_Cnt++] = Val  & 0xFF;
             }

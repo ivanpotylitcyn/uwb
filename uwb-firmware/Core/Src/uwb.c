@@ -131,8 +131,8 @@ void uwb_init()
 
 void sensors_handle()
 {
-    bme280_read(&uwb.bme280);
-    ps_read(&uwb.ps);
+    //bme280_read(&uwb.bme280);
+    //ps_read(&uwb.ps);
     uwb.water_sink = !HAL_GPIO_ReadPin(water_sens_GPIO_Port, water_sens_Pin);
 
     if (uwb.state == UWB_ONBOARD && uwb.ps.pressure > uwb.press_rtig1) {
@@ -165,7 +165,7 @@ void uwb_handle()
     // Handle LED
     // ****************************************
 
-    if (uwb.state != UWB_ENMERGED && uwb.led_blink && HAL_GetTick() - start_blink_moment > uwb.ledrate) {
+    if (uwb.state != UWB_ENMERGED && (bool)uwb.led_blink && HAL_GetTick() - start_blink_moment > uwb.ledrate) {
         HAL_GPIO_WritePin(light_LED_GPIO_Port, light_LED_Pin, (((uint64_t)0x01 << (cnt_mask & 0x3F)) & uwb.led_mask) ? GPIO_PIN_SET : GPIO_PIN_RESET);
         cnt_mask++;
     	start_blink_moment = HAL_GetTick();
@@ -235,20 +235,21 @@ void uwb_handle()
     }
 }
 
-bool uwb_enable_led(bool enable)
+bool uwb_enable_led(uint16_t enable)
 {
-    if (uwb.led_blink || uwb.state == UWB_ENMERGED) {
+    if ((bool)uwb.led_blink || uwb.state == UWB_ENMERGED) {
         return 0;
     }
+
     uwb.led_toggle = enable;
-	HAL_GPIO_WritePin(light_LED_GPIO_Port, light_LED_Pin, enable ? GPIO_PIN_SET : GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(light_LED_GPIO_Port, light_LED_Pin, (bool)enable ? GPIO_PIN_SET : GPIO_PIN_RESET);
 
 	return 1;
 }
 
-bool uwb_enable_led_blink(bool enable)
+bool uwb_enable_led_blink(uint16_t enable)
 {
-    if (uwb.led_toggle || uwb.state == UWB_ENMERGED) {
+    if ((bool)uwb.led_toggle || uwb.state == UWB_ENMERGED) {
         return 0;
     }
 
