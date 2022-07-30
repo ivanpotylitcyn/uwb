@@ -41,6 +41,7 @@ void modbus_init()
 
     __HAL_TIM_CLEAR_FLAG(&htim6, TIM_SR_UIF);
     HAL_UART_Receive_IT(&huart1, &str, 1);
+    //HAL_UART_Receive_DMA(&huart1, &str, 1);
 }
 
 void rs485_transmit(uint8_t* buff_uart, uint16_t cnt)
@@ -48,7 +49,8 @@ void rs485_transmit(uint8_t* buff_uart, uint16_t cnt)
 	transmiting = true;
 
     HAL_GPIO_WritePin(UART_DE_GPIO_Port, UART_DE_Pin, GPIO_PIN_SET); // Activate RS485 TX
-    HAL_UART_Transmit_IT(&huart1, buff_uart, cnt);
+    //HAL_UART_Transmit_IT(&huart1, buff_uart, cnt);
+    HAL_UART_Transmit_DMA(&huart1, buff_uart, cnt);
 }
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
@@ -67,6 +69,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
     cnt++;
 
     HAL_UART_Receive_IT(&huart1, &str, 1);
+    //HAL_UART_Receive_DMA(&huart1, &str, 1);
 }
 
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
@@ -82,6 +85,7 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 
     HAL_GPIO_WritePin(UART_DE_GPIO_Port, UART_DE_Pin, GPIO_PIN_RESET);  // Activate RS485 RX
     HAL_UART_Receive_IT(&huart1, &str, 1);
+    //HAL_UART_Receive_DMA(&huart1, &str, 1);
     transmiting = false;
 }
 
@@ -127,7 +131,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
             for (int i = 0; i < num_word; i++) {
                 uint16_t Val = *ModBusRegs[register_address+i];
                 buff_uart[ModBusTX_Cnt++] = (Val >> 8) & 0xFF;
-                buff_uart[ModBusTX_Cnt++] =  Val  & 0xFF;
+                buff_uart[ModBusTX_Cnt++] = Val  & 0xFF;
             }
                 cnt = GenCRC16(buff_uart, buff_uart[2] + 3);
         }

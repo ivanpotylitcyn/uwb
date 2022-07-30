@@ -26,7 +26,7 @@ void write_flash() {
     HAL_FLASH_Unlock(); // Открыть доступ к FLASH (она закрыта от случайной записи)
     uint32_t *source_adr = (void *)&uwb ;
 
-    GenCRC16(source_adr, 20);
+    GenCRC16(source_adr, 18);
 
     FLASH_EraseInitTypeDef ef; // Объявляю структуру, необходимую для функции стирания страницы
     HAL_StatusTypeDef stat;
@@ -36,7 +36,7 @@ void write_flash() {
     uint32_t temp; // Временная переменная для результата стирания (не использую)
     HAL_FLASHEx_Erase(&ef, &temp); // Вызов функции стирания
     // Будьте уверены, что размер структуры настроек кратен 2 байтам
-    for (int i = 0; i < 6; i++) { // Запись всех настроек
+    for (int i = 0; i < 5; i++) { // Запись всех настроек
         stat = HAL_FLASH_Program (FLASH_TYPEPROGRAMDATA_WORD, SETTINGS_ADDRESS + i*4, *(source_adr+i));
         if (stat != HAL_OK) break; // Если что-то пошло не так - выскочить из цикла
     }
@@ -48,15 +48,10 @@ void read_flash() {
     uint32_t *source_adr = (uint32_t *)(SETTINGS_ADDRESS);
     uint32_t *dest_adr = (void *)&uwb;
 
-    if (CheckCRC16(source_adr, 22)) {
-        for (uint16_t i=0; i < 6; ++i) {                                  // В цикле производим чтение
+    if (CheckCRC16(source_adr, 20)) {
+        for (uint16_t i=0; i < 5; ++i) {                                  // В цикле производим чтение
                 *(dest_adr + i) = *(__IO uint32_t*)(source_adr + i);      // Само чтение
         }
-        uwb.bitrate_rs485 = BITRATE_RS485;
-        uwb.press_rtig1 = UWB_SUBMERGED_THRESHOLD;
-        uwb.press_rtig2 = UWB_ENMERGED_THRESHOLD;
-        uwb.led_mask = LEDMASK;
-        uwb.ledrate = UWB_BLINK_DELAY;
     } else {
         uwb.bitrate_rs485 = BITRATE_RS485;
         uwb.press_rtig1 = UWB_SUBMERGED_THRESHOLD;
@@ -136,8 +131,8 @@ void uwb_init()
 
 void sensors_handle()
 {
-    //bme280_read(&uwb.bme280);
-    //ps_read(&uwb.ps);
+    bme280_read(&uwb.bme280);
+    ps_read(&uwb.ps);
     uwb.water_sink = !HAL_GPIO_ReadPin(water_sens_GPIO_Port, water_sens_Pin);
 
     if (uwb.state == UWB_ONBOARD && uwb.ps.pressure > uwb.press_rtig1) {

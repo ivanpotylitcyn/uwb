@@ -46,11 +46,12 @@ typedef enum {
 
 typedef struct {
 
-    uint64_t            led_mask;
-    uint16_t            press_rtig1;
-    uint16_t            press_rtig2;
-    uint32_t            bitrate_rs485;
-    uint16_t            ledrate;
+    uint64_t            led_mask; //8
+    uint16_t            press_rtig1; //2
+    uint16_t            press_rtig2; // 2
+    uint32_t            bitrate_rs485; // 4
+    uint16_t            ledrate; // 2
+    uint16_t            chekCRC16; // 2
 
     uint16_t            led_toggle;
     uint16_t            led_blink;

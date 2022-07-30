@@ -2,6 +2,7 @@
 "./Application/User/Core/ads1220.o"
 "./Application/User/Core/bme280.o"
 "./Application/User/Core/bq.o"
+"./Application/User/Core/dma.o"
 "./Application/User/Core/gpio.o"
 "./Application/User/Core/i2c.o"
 "./Application/User/Core/main.o"
