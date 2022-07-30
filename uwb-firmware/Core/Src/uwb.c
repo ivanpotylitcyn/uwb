@@ -75,7 +75,7 @@ void switch_RS485() {
     USART1 -> CR1 |= USART_CR1_UE;
 
     TIM6->CR1 &= ~(TIM_CR1_CEN);
-    TIM6->ARR = (uint32_t)((30000000 / uwb.bitrate_rs485));
+    TIM6->ARR = ((13500000 / uwb.bitrate_rs485));
     TIM6->CR1 |= TIM_CR1_CEN;
 }
 
@@ -131,8 +131,8 @@ void uwb_init()
 
 void sensors_handle()
 {
-    //bme280_read(&uwb.bme280);
-    //ps_read(&uwb.ps);
+    bme280_read(&uwb.bme280);
+    ps_read(&uwb.ps);
     uwb.water_sink = !HAL_GPIO_ReadPin(water_sens_GPIO_Port, water_sens_Pin);
 
     if (uwb.state == UWB_ONBOARD && uwb.ps.pressure > uwb.press_rtig1) {
