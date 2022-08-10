@@ -198,8 +198,5 @@ uint32_t ADS122C04_getConversionData(void) {
 
     conversionData = ((uint32_t)iic_recvbuf[2]) | ((uint32_t)iic_recvbuf[1]<<8) | ((uint32_t)iic_recvbuf[0]<<16);
 
-    if ((conversionData & 0x00800000) == 0x00800000)
-        conversionData |= 0xFF000000;
-
-    return conversionData;
+    return (conversionData << 0);
 }

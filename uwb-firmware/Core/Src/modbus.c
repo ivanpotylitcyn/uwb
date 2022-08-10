@@ -23,16 +23,15 @@ uint16_t *ModBusRegs[ModBusRegsCnt] = {
                                         (uint16_t *)&(uwb.bme280.temperature),
                                         (uint16_t *)&(uwb.bme280.humidity),
                                         (uint16_t *)&(uwb.bme280.pressure),
-                                        (uint16_t *)&(uwb.ps.pressure),
-                                        (uint16_t *)&(uwb.press_rtig1),
-                                        (uint16_t *)&(uwb.press_rtig2),
+                                        (uint16_t *)&(uwb.ps.pressure)+1, (uint16_t *)&(uwb.ps.pressure),
+                                        (uint16_t *)&(uwb.press_rtig1)+1,(uint16_t *)&(uwb.press_rtig1),
+                                        (uint16_t *)&(uwb.press_rtig2)+1, (uint16_t *)&(uwb.press_rtig2),
                                         (uint16_t *)&(uwb.bitrate_rs485)+1, ((uint16_t *)&(uwb.bitrate_rs485)),
                                         (uint16_t *)&(uwb.led_mask)+3, (uint16_t *)&(uwb.led_mask)+2, (uint16_t *)&(uwb.led_mask)+1, (uint16_t *)&(uwb.led_mask),
                                         (uint16_t *)&(uwb.ledrate),
                                         (uint16_t *)&(uwb.led_toggle),
                                         (uint16_t *)&(uwb.led_blink),
                                         (uint16_t *)&(uwb.water_sink),
-                                        0,0,0
         };
 
 void modbus_init()
@@ -153,13 +152,13 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
                 uwb.ledrate = num_word;
                 break;
 
-            case UWB_PRESS_TRIG_1:
-                uwb.press_rtig1 = num_word;
-                break;
-
-            case UWB_PRESS_TRIG_2:
-                uwb.press_rtig2 = num_word;
-                break;
+//            case UWB_PRESS_TRIG_1:
+//                uwb.press_rtig1 = num_word;
+//                break;
+//
+//            case UWB_PRESS_TRIG_2:
+//                uwb.press_rtig2 = num_word;
+//                break;
 
 
             case UWB_MASK_LED_H1:
@@ -228,6 +227,18 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 
                 uwb.bitrate_rs485 = ((uint32_t)buff_uart[7] << 24) | ((uint32_t)buff_uart[8] << 16);
                 uwb.bitrate_rs485 |= (((uint32_t)buff_uart[9] << 8)) | (uint32_t)buff_uart[10];
+                break;
+
+            case UWB_PRESS_TRIG_1_H:
+
+                uwb.press_rtig1 = ((uint32_t)buff_uart[7] << 24) | ((uint32_t)buff_uart[8] << 16);
+                uwb.press_rtig1 |= (((uint32_t)buff_uart[9] << 8)) | (uint32_t)buff_uart[10];
+                break;
+
+            case UWB_PRESS_TRIG_2_H:
+
+                uwb.press_rtig2 = ((uint32_t)buff_uart[7] << 24) | ((uint32_t)buff_uart[8] << 16);
+                uwb.press_rtig2 |= (((uint32_t)buff_uart[9] << 8)) | (uint32_t)buff_uart[10];
                 break;
 
             case UWB_MASK_LED_H1:

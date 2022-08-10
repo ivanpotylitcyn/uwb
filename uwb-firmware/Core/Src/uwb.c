@@ -4,10 +4,10 @@
 #define UWB_RARE_DELAY              10000
 #define UWB_DENSE_DELAY             1000
 
-#define SETTINGS_ADDRESS            0x08008800
+#define SETTINGS_ADDRESS            0x08009000
 #define UWB_SUBMERGED_THRESHOLD     25000 // Под водой
 #define UWB_ENMERGED_THRESHOLD      20000 // Всплыли
-#define BITRATE_RS485               9600
+#define BITRATE_RS485               256000
 #define LEDMASK                     0xAAAAAAAAAAAAAAAA
 #define UWB_BLINK_DELAY             500
 
@@ -26,7 +26,7 @@ void write_flash() {
     HAL_FLASH_Unlock(); // Открыть доступ к FLASH (она закрыта от случайной записи)
     uint32_t *source_adr = (void *)&uwb ;
 
-    GenCRC16(source_adr, 18);
+    GenCRC16(source_adr, 22);
 
     FLASH_EraseInitTypeDef ef; // Объявляю структуру, необходимую для функции стирания страницы
     HAL_StatusTypeDef stat;
@@ -36,7 +36,7 @@ void write_flash() {
     uint32_t temp; // Временная переменная для результата стирания (не использую)
     HAL_FLASHEx_Erase(&ef, &temp); // Вызов функции стирания
     // Будьте уверены, что размер структуры настроек кратен 2 байтам
-    for (int i = 0; i < 5; i++) { // Запись всех настроек
+    for (int i = 0; i < 6; i++) { // Запись всех настроек
         stat = HAL_FLASH_Program (FLASH_TYPEPROGRAMDATA_WORD, SETTINGS_ADDRESS + i*4, *(source_adr+i));
         if (stat != HAL_OK) break; // Если что-то пошло не так - выскочить из цикла
     }
@@ -47,9 +47,8 @@ void write_flash() {
 void read_flash() {
     uint32_t *source_adr = (uint32_t *)(SETTINGS_ADDRESS);
     uint32_t *dest_adr = (void *)&uwb;
-
-    if (CheckCRC16(source_adr, 20)) {
-        for (uint16_t i=0; i < 5; ++i) {                                  // В цикле производим чтение
+    if (CheckCRC16(source_adr, 24)) {
+        for (uint16_t i=0; i < 6; ++i) {                                  // В цикле производим чтение
                 *(dest_adr + i) = *(__IO uint32_t*)(source_adr + i);      // Само чтение
         }
     } else {
@@ -108,6 +107,11 @@ void uwb_init()
     HAL_GPIO_WritePin(EN_3V3_GPIO_Port, EN_3V3_Pin, GPIO_PIN_SET);      // Enable 3V3
     HAL_GPIO_WritePin(EN_5V0_GPIO_Port, EN_5V0_Pin, GPIO_PIN_SET);      // Enable 5V0
     HAL_GPIO_WritePin(EN_12LED_GPIO_Port, EN_12LED_Pin, GPIO_PIN_SET);  // Enable 12V0
+
+    HAL_GPIO_WritePin(LED_G_GPIO_Port, LED_G_Pin, GPIO_PIN_SET);  // Activate RS485 RX
+    HAL_GPIO_WritePin(LED_B_GPIO_Port, LED_B_Pin, GPIO_PIN_SET);  // Activate RS485 RX
+    HAL_GPIO_WritePin(LED_R_GPIO_Port, LED_R_Pin, GPIO_PIN_SET);  // Activate RS485 RX
+
 
 
     // ****************************************

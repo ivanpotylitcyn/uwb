@@ -26,29 +26,32 @@ typedef enum {
     UWB_TEMPERATURE     = 0x01,
     UWB_HUMIDITY        = 0x02,
     UWB_PRESSURE        = 0x03,
-    UWB_PRESSURE_ADS    = 0x04,
-    UWB_PRESS_TRIG_1    = 0x05,
-    UWB_PRESS_TRIG_2    = 0x06,
-    UWB_BITRATE_RS485_H = 0x07,
-    UWB_BITRATE_RS485_L = 0x08,
-    UWB_MASK_LED_H1     = 0x09,
-    UWB_MASK_LED_L1     = 0x0A,
-    UWB_MASK_LED_H0     = 0x0B,
-    UWB_MASK_LED_L0     = 0x0C,
-    UWB_LEDRATE         = 0x0D,
-    UWB_LED_TOGGLE      = 0x0E,
-	UWB_LED_BLINK	    = 0x0F,
-	UWB_WATER_SINK      = 0x10,
-	UWB_RESET           = 0x11,
-	UWB_RESTART         = 0x12,
-	UWB_SAVE_FLSH       = 0x13,
+    UWB_PRESSURE_ADS_L  = 0x04,
+    UWB_PRESSURE_ADS_H  = 0x05,
+    UWB_PRESS_TRIG_1_H  = 0x06,
+    UWB_PRESS_TRIG_1_L  = 0x07,
+    UWB_PRESS_TRIG_2_H  = 0x08,
+    UWB_PRESS_TRIG_2_L  = 0x09,
+    UWB_BITRATE_RS485_H = 0x0A,
+    UWB_BITRATE_RS485_L = 0x0B,
+    UWB_MASK_LED_H1     = 0x0C,
+    UWB_MASK_LED_L1     = 0x0D,
+    UWB_MASK_LED_H0     = 0x0E,
+    UWB_MASK_LED_L0     = 0x0F,
+    UWB_LEDRATE         = 0x10,
+    UWB_LED_TOGGLE      = 0x11,
+	UWB_LED_BLINK	    = 0x12,
+	UWB_WATER_SINK      = 0x13,
+	UWB_RESET           = 0x14,
+	UWB_RESTART         = 0x15,
+	UWB_SAVE_FLSH       = 0x16,
 } uwb_modbus_register_t;
 
 typedef struct {
 
     uint64_t            led_mask; //8
-    uint16_t            press_rtig1; //2
-    uint16_t            press_rtig2; // 2
+    uint32_t            press_rtig1; //4
+    uint32_t            press_rtig2; // 4
     uint32_t            bitrate_rs485; // 4
     uint16_t            ledrate; // 2
     uint16_t            chekCRC16; // 2
