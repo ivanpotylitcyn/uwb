@@ -5,8 +5,8 @@
 #define UWB_DENSE_DELAY             1000
 
 #define SETTINGS_ADDRESS            0x08009000
-#define UWB_SUBMERGED_THRESHOLD     25000 // Под водой
-#define UWB_ENMERGED_THRESHOLD      20000 // Всплыли
+#define UWB_SUBMERGED_THRESHOLD     20000 // Под водой
+#define UWB_ENMERGED_THRESHOLD      25000 // Всплыли
 #define BITRATE_RS485               256000
 #define LEDMASK                     0xAAAAAAAAAAAAAAAA
 #define UWB_BLINK_DELAY             500
