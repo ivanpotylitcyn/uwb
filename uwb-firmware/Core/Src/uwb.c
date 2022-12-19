@@ -5,12 +5,12 @@
 #define UWB_DENSE_DELAY             1000
 
 #define SETTINGS_ADDRESS            0x08009000
+
 #define UWB_SUBMERGED_THRESHOLD     20000 // Под водой
 #define UWB_ENMERGED_THRESHOLD      25000 // Всплыли
 #define BITRATE_RS485               256000
 #define LEDMASK                     0xAAAAAAAAAAAAAAAA
 #define UWB_BLINK_DELAY             500
-
 
 uwb_context_t uwb;
 
@@ -20,36 +20,36 @@ static uint32_t start_blink_moment  = 0;
 
 static uint8_t cnt_mask = 0;
 
-// Запись во FLASH
 void write_flash() {
-
-    HAL_FLASH_Unlock(); // Открыть доступ к FLASH (она закрыта от случайной записи)
-    uint32_t *source_adr = (void *)&uwb ;
+    HAL_FLASH_Unlock();                   // Открыть доступ к FLASH (она закрыта от случайной записи)
+    uint32_t* source_adr = (void*)&uwb;
 
     GenCRC16(source_adr, 22);
 
-    FLASH_EraseInitTypeDef ef; // Объявляю структуру, необходимую для функции стирания страницы
-    HAL_StatusTypeDef stat;
+    FLASH_EraseInitTypeDef ef;            // Объявляю структуру, необходимую для функции стирания страницы
     ef.TypeErase = FLASH_TYPEERASE_PAGES; // Стирать постранично
-    ef.PageAddress = SETTINGS_ADDRESS; // Адрес страницы для стирания
-    ef.NbPages = 1; //Число страниц = 1
-    uint32_t temp; // Временная переменная для результата стирания (не использую)
-    HAL_FLASHEx_Erase(&ef, &temp); // Вызов функции стирания
+    ef.PageAddress = SETTINGS_ADDRESS;    // Адрес страницы для стирания
+    ef.NbPages = 1;                       //Число страниц = 1
+    uint32_t temp;                        // Временная переменная для результата стирания (не использую)
+    HAL_FLASHEx_Erase(&ef, &temp);        // Вызов функции стирания
+
     // Будьте уверены, что размер структуры настроек кратен 2 байтам
-    for (int i = 0; i < 6; i++) { // Запись всех настроек
-        stat = HAL_FLASH_Program (FLASH_TYPEPROGRAMDATA_WORD, SETTINGS_ADDRESS + i*4, *(source_adr+i));
-        if (stat != HAL_OK) break; // Если что-то пошло не так - выскочить из цикла
+    HAL_StatusTypeDef stat;
+    for (int i = 0; i < 6; i++) {         // Запись всех настроек
+        stat = HAL_FLASH_Program(FLASH_TYPEPROGRAMDATA_WORD, SETTINGS_ADDRESS + i * 4, *(source_adr + i));
+        if (stat != HAL_OK) break;        // Если что-то пошло не так - выскочить из цикла
     }
 
-    HAL_FLASH_Lock(); // Закрыть флешку от случайной записи
+    HAL_FLASH_Lock();                     // Закрыть флешку от случайной записи
 }
 
 void read_flash() {
     uint32_t *source_adr = (uint32_t *)(SETTINGS_ADDRESS);
     uint32_t *dest_adr = (void *)&uwb;
+
     if (CheckCRC16(source_adr, 24)) {
-        for (uint16_t i=0; i < 6; ++i) {                                  // В цикле производим чтение
-                *(dest_adr + i) = *(__IO uint32_t*)(source_adr + i);      // Само чтение
+        for (uint16_t i = 0; i < 6; ++i) {                           // В цикле производим чтение
+                *(dest_adr + i) = *(__IO uint32_t*)(source_adr + i); // Само чтение
         }
     } else {
         uwb.bitrate_rs485 = BITRATE_RS485;
@@ -57,6 +57,10 @@ void read_flash() {
         uwb.press_rtig2 = UWB_ENMERGED_THRESHOLD;
         uwb.led_mask = LEDMASK;
         uwb.ledrate = UWB_BLINK_DELAY;
+
+        uwb.bq.charge_current = 1024;
+        uwb.bq.charge_voltage = 4096;
+        uwb.bq.input_current = 1024;
     }
 }
 
@@ -80,7 +84,6 @@ void switch_RS485() {
 
 void uwb_init()
 {
-
     TM_CRC_INIT();
     read_flash();
     switch_RS485();
@@ -91,12 +94,17 @@ void uwb_init()
     uwb.mode = UWB_MODE_COMMAND;
     uwb.state = UWB_ONBOARD;
 
+
     // ****************************************
     // Enable BQ
     // ****************************************
 
-    //HAL_GPIO_WritePin(EN_BQ_GPIO_Port, EN_BQ_Pin, GPIO_PIN_SET);		// Enable BQ
-    //bq_init(&uwb.bq);
+    uwb.bq.i2c_connected = false;
+    uwb.bq.charger_is_present = false;
+    uwb.bq.charger_is_charging = false;
+
+    HAL_GPIO_WritePin(EN_BQ_GPIO_Port, EN_BQ_Pin, GPIO_PIN_SET);        // Enable BQ
+    bq24735_init(&uwb.bq);
 
 
     // ****************************************
@@ -113,7 +121,6 @@ void uwb_init()
     HAL_GPIO_WritePin(LED_R_GPIO_Port, LED_R_Pin, GPIO_PIN_SET);  // Activate RS485 RX
 
 
-
     // ****************************************
     // Enable RS
     // ****************************************
@@ -128,7 +135,7 @@ void uwb_init()
 
     HAL_GPIO_WritePin(EN_Hall_GPIO_Port, EN_Hall_Pin, GPIO_PIN_RESET);  // Enable Hall sensor
     HAL_Delay(10);
-    bme280_init();														// Initialize BME280
+    bme280_init();                                                      // Initialize BME280
     ADS122_init();
     HAL_Delay(10);
 }
@@ -163,8 +170,6 @@ void sensors_handle()
 
 void uwb_handle()
 {
-    //bq_handle(&uwb.bq);
-
     // ****************************************
     // Handle LED
     // ****************************************
@@ -177,7 +182,7 @@ void uwb_handle()
 
 
     // ****************************************
-    // Handle Hall sensor (got to sleep)
+    // Handle Hall sensor (go to sleep)
     // ****************************************
 
     if (!HAL_GPIO_ReadPin(go_to_sleep_GPIO_Port, go_to_sleep_Pin))
@@ -191,7 +196,11 @@ void uwb_handle()
     switch (uwb.mode)
     {
     case UWB_MODE_COMMAND:
-    	sensors_handle();
+        sensors_handle();
+        if (uwb.bq.i2c_connected) {
+            bq24735_handle(&uwb.bq);
+            uwb.bq_is_charging = (uint16_t)uwb.bq.charger_is_charging;
+        }
         break;
 
     case UWB_MODE_EMERGENCY:
@@ -246,9 +255,9 @@ bool uwb_enable_led(uint16_t enable)
     }
 
     uwb.led_toggle = enable;
-	HAL_GPIO_WritePin(light_LED_GPIO_Port, light_LED_Pin, (bool)enable ? GPIO_PIN_SET : GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(light_LED_GPIO_Port, light_LED_Pin, (bool)enable ? GPIO_PIN_SET : GPIO_PIN_RESET);
 
-	return 1;
+    return 1;
 }
 
 bool uwb_enable_led_blink(uint16_t enable)
@@ -260,10 +269,10 @@ bool uwb_enable_led_blink(uint16_t enable)
     cnt_mask = 0;
     uwb.led_blink = enable;
 
-	if (enable)
-		start_blink_moment = HAL_GetTick();
-	else
-		HAL_GPIO_WritePin(light_LED_GPIO_Port, light_LED_Pin, GPIO_PIN_RESET);
+    if (enable)
+        start_blink_moment = HAL_GetTick();
+    else
+        HAL_GPIO_WritePin(light_LED_GPIO_Port, light_LED_Pin, GPIO_PIN_RESET);
 
-	return 1;
+    return 1;
 }

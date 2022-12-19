@@ -32,6 +32,10 @@ uint16_t *ModBusRegs[ModBusRegsCnt] = {
                                         (uint16_t *)&(uwb.led_toggle),
                                         (uint16_t *)&(uwb.led_blink),
                                         (uint16_t *)&(uwb.water_sink),
+                                        (uint16_t *)&(uwb.bq.charge_current),
+                                        (uint16_t *)&(uwb.bq.charge_voltage),
+                                        (uint16_t *)&(uwb.bq.input_current),
+                                        (uint16_t *)&(uwb.bq_is_charging),
         };
 
 void modbus_init()
@@ -90,7 +94,6 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
-
     if (htim->Instance != TIM6) // Проверка завершения транзакции по modbus
         return;
 
@@ -120,19 +123,20 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
     switch (buff_uart[1])
     {
     case MODBUS_READ:
-
         if ((register_address + num_word) <= ModBusRegsCnt) {
             uint8_t ModBusTX_Cnt = 2;
-            buff_uart[ModBusTX_Cnt++] = (uint8_t)(num_word*2);
-            if ((register_address) == 0) {
+            buff_uart[ModBusTX_Cnt++] = (uint8_t)(num_word * 2);
+            
+            if ((register_address) == 0)
               uwb.ping = ping_counter++;
-            }
+
             for (int i = 0; i < num_word; i++) {
-                uint16_t Val = (uint16_t)*ModBusRegs[register_address+i];
+                uint16_t Val = (uint16_t)*ModBusRegs[register_address + i];
                 buff_uart[ModBusTX_Cnt++] = (Val >> 8) & 0xFF;
-                buff_uart[ModBusTX_Cnt++] = Val  & 0xFF;
+                buff_uart[ModBusTX_Cnt++] = Val & 0xFF;
             }
-                cnt = GenCRC16(buff_uart, buff_uart[2] + 3);
+
+            cnt = GenCRC16(buff_uart, buff_uart[2] + 3);
         }
 
         break;
@@ -185,6 +189,20 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 
                 break;
 
+            case UWB_CHARGE_CURRENT:
+                uwb.bq.charge_current = num_word;
+                bq24735_handle(&uwb.bq);
+                break;
+
+            case UWB_CHARGE_VOLTAGE:
+                uwb.bq.charge_voltage = num_word;
+                bq24735_handle(&uwb.bq);
+                break;
+
+            case UWB_INPUT_CURRENT:
+                uwb.bq.input_current = num_word;
+                bq24735_handle(&uwb.bq);
+                break;
 
             case UWB_RESET:
                 if (num_word) {

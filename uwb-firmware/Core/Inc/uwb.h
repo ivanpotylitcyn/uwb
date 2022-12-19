@@ -40,21 +40,25 @@ typedef enum {
     UWB_MASK_LED_L0     = 0x0F,
     UWB_LEDRATE         = 0x10,
     UWB_LED_TOGGLE      = 0x11,
-	UWB_LED_BLINK	    = 0x12,
-	UWB_WATER_SINK      = 0x13,
-	UWB_RESET           = 0x14,
-	UWB_RESTART         = 0x15,
-	UWB_SAVE_FLSH       = 0x16,
+    UWB_LED_BLINK       = 0x12,
+    UWB_WATER_SINK      = 0x13,
+    UWB_CHARGE_CURRENT  = 0x14,
+    UWB_CHARGE_VOLTAGE  = 0x15,
+    UWB_INPUT_CURRENT   = 0x16,
+    UWB_IS_CHARGING     = 0x17,
+    UWB_RESET           = 0x18,
+    UWB_RESTART         = 0x19,
+    UWB_SAVE_FLSH       = 0x1A,
 } uwb_modbus_register_t;
 
 typedef struct {
 
-    uint64_t            led_mask; //8
-    uint32_t            press_rtig1; //4
-    uint32_t            press_rtig2; // 4
+    uint64_t            led_mask;      // 8
+    uint32_t            press_rtig1;   // 4
+    uint32_t            press_rtig2;   // 4
     uint32_t            bitrate_rs485; // 4
-    uint16_t            ledrate; // 2
-    uint16_t            chekCRC16; // 2
+    uint16_t            ledrate;       // 2
+    uint16_t            chekCRC16;     // 2
 
     uint16_t            ping;
 
@@ -64,10 +68,11 @@ typedef struct {
     uwb_mode_t          mode;
     uwb_state_t         state;
 
-    bq_context_t        bq;
+    bq24735_context_t   bq;
     bme280_context_t    bme280;
     ps_context_t        ps;
-    
+
+    uint16_t            bq_is_charging;
     uint16_t            water_sink;
 } uwb_context_t;
 
