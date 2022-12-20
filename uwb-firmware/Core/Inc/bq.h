@@ -1,11 +1,10 @@
 #pragma once
 
-#include "i2c.h"
-
 #include <stdint.h>
 #include <stdbool.h>
+#include <main.h>
 
-#define QB24735_SMBUS_ADDR 0x12
+#define BQ24735_SMBUS_ADDR 0x12
 
 typedef struct {
     uint16_t charge_current;
@@ -15,6 +14,8 @@ typedef struct {
     bool     i2c_connected;
     bool     charger_is_present;
     bool     charger_is_charging;
+
+    bool	 acok;
 } bq24735_context_t;
 
 typedef enum {
@@ -43,7 +44,7 @@ typedef enum {
 
 /* BQ24735 ManufacturerID and DeviceID values */
 #define BQ24735_MANUFACTURER_ID_VALUE     0x0040
-#define BQ24735_DEVICE_ID_VALUE           0x001B
+#define BQ24735_DEVICE_ID_VALUE           0x000B
 
 void bq24735_init(bq24735_context_t* bq);
 void bq24735_handle(bq24735_context_t* bq);

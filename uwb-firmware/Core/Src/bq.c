@@ -1,16 +1,18 @@
 #include "bq.h"
 
+extern I2C_HandleTypeDef hi2c1;
+
 /* Private functions */
 
 static int bq24735_write_word(uint8_t reg, uint16_t value) {
-    HAL_StatusTypeDef status = HAL_I2C_Mem_Write(&hi2c2, QB24735_SMBUS_ADDR, reg, I2C_MEMADD_SIZE_8BIT, (uint8_t*)&value, 2, 0x1000);
+    HAL_StatusTypeDef status = HAL_I2C_Mem_Write(&hi2c1, BQ24735_SMBUS_ADDR, reg, I2C_MEMADD_SIZE_8BIT, (uint8_t*)&value, 2, 0x10000);
 
     return status == HAL_OK ? HAL_OK : -BQ24735_WRITE_ERR;
 }
 
 static int bq24735_read_word(uint8_t reg) {
     uint16_t value;
-    HAL_StatusTypeDef status = HAL_I2C_Mem_Read(&hi2c2, QB24735_SMBUS_ADDR, reg, I2C_MEMADD_SIZE_8BIT, (uint8_t*)&value, 2, 0x1000);
+    HAL_StatusTypeDef status = HAL_I2C_Mem_Read(&hi2c1, BQ24735_SMBUS_ADDR, reg, I2C_MEMADD_SIZE_8BIT, (uint8_t*)&value, 2, 0x10000);
 
     return status == HAL_OK ? value : -BQ24735_READ_ERR;
 }
@@ -126,6 +128,8 @@ void bq24735_init(bq24735_context_t* bq) {
 
 void bq24735_handle(bq24735_context_t* bq)
 {
+	bq->acok = HAL_GPIO_ReadPin(ACOK_bat_GPIO_Port, ACOK_bat_Pin);
+
     if (bq24735_charger_is_present(bq)) {
         bq->charger_is_present = true;
         bq24735_enable_charging(bq);
