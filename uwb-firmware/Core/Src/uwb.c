@@ -96,15 +96,14 @@ void uwb_init()
 
 
     // ****************************************
-    // Enable BQ
+    // Init BQ state
     // ****************************************
+
+    HAL_GPIO_WritePin(EN_BQ_GPIO_Port, EN_BQ_Pin, GPIO_PIN_SET);        // Enable BQ
 
     uwb.bq.i2c_connected = false;
     uwb.bq.charger_is_present = false;
     uwb.bq.charger_is_charging = false;
-
-    HAL_GPIO_WritePin(EN_BQ_GPIO_Port, EN_BQ_Pin, GPIO_PIN_SET);        // Enable BQ
-    bq24735_init(&uwb.bq);
 
 
     // ****************************************
@@ -168,6 +167,50 @@ void sensors_handle()
     }
 }
 
+static uint32_t bq_last_handle_moment = 0;
+
+void charge_handle()
+{
+    if (HAL_GetTick() - bq_last_handle_moment < uwb.bq.handle_timeout)
+        return;
+
+    bq_last_handle_moment = HAL_GetTick();
+
+    if (uwb.mode == UWB_MODE_EMERGENCY) {
+        HAL_GPIO_WritePin(EN_BQ_GPIO_Port, EN_BQ_Pin, GPIO_PIN_RESET);        // Disable BQ
+        return;
+    }
+
+    // ****************************************
+    // Check for I2C connection
+    // ****************************************
+
+    uwb.bq.i2c_connected = bq24735_connect();
+
+    if (!uwb.bq.i2c_connected)
+        return;
+
+
+    // ****************************************
+    // Read states, write configs
+    // ****************************************
+
+    uwb.bq.acok = HAL_GPIO_ReadPin(ACOK_bat_GPIO_Port, ACOK_bat_Pin);
+    uwb.bq.charger_is_present = bq24735_charger_is_present();
+
+    if (!uwb.bq.charger_is_present)
+        return;
+
+    bq24735_config_charger(&uwb.bq);
+
+    if (uwb.bq.charging_enabled)
+        bq24735_enable_charging();
+    else
+        bq24735_disable_charging();
+
+    uwb.bq.charger_is_charging = bq24735_charger_is_charging();
+}
+
 void uwb_handle()
 {
     // ****************************************
@@ -196,22 +239,11 @@ void uwb_handle()
     switch (uwb.mode)
     {
     case UWB_MODE_COMMAND:
+        charge_handle();
         sensors_handle();
-        if (uwb.bq.i2c_connected) {
-            bq24735_handle(&uwb.bq);
-            uwb.bq_is_charging = (uint16_t)uwb.bq.charger_is_charging;
-        }
         break;
 
     case UWB_MODE_EMERGENCY:
-//        if (uwb.state == UWB_ONBOARD && HAL_GetTick() - start_rare_moment > UWB_RARE_DELAY) {
-//            start_rare_moment = HAL_GetTick();
-//        }
-//
-//        if (uwb.state == UWB_SUBMERGED && HAL_GetTick() - start_dense_moment > UWB_DENSE_DELAY) {
-//            start_dense_moment = HAL_GetTick();
-//        }
-
         if (uwb.state == UWB_ENMERGED && HAL_GetTick() - start_blink_moment > uwb.ledrate) {
             HAL_GPIO_WritePin(light_LED_GPIO_Port, light_LED_Pin, (((uint64_t)0x01 << (cnt_mask & 0x3F)) & uwb.led_mask) ? GPIO_PIN_SET : GPIO_PIN_RESET);
             cnt_mask++;

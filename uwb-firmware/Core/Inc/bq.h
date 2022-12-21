@@ -7,24 +7,27 @@
 #define BQ24735_SMBUS_ADDR 0x12
 
 typedef struct {
+    bool     i2c_connected;
+    bool     charger_is_present;
+    bool     acok;
+    bool     charger_is_charging;
+
     uint16_t charge_current;
     uint16_t charge_voltage;
     uint16_t input_current;
 
-    bool     i2c_connected;
-    bool     charger_is_present;
-    bool     charger_is_charging;
+    bool     charging_enabled;
 
-    bool	 acok;
+    uint16_t handle_timeout;
 } bq24735_context_t;
 
 typedef enum {
-	BQ24735_OK = 0,
-	BQ24735_INVALID_I2C,
-	BQ24735_READ_ERR,
-	BQ24735_WRITE_ERR,
-	BQ24735_MANUFACTURER_ID_MISMATCH,
-	BQ24735_DEVICE_ID_MISMATCH,
+    BQ24735_OK = 0,
+    BQ24735_INVALID_I2C,
+    BQ24735_READ_ERR,
+    BQ24735_WRITE_ERR,
+    BQ24735_MANUFACTURER_ID_MISMATCH,
+    BQ24735_DEVICE_ID_MISMATCH,
 } bq24735_error_t;
 
 /* BQ24735 available commands and their respective masks */
@@ -46,5 +49,11 @@ typedef enum {
 #define BQ24735_MANUFACTURER_ID_VALUE     0x0040
 #define BQ24735_DEVICE_ID_VALUE           0x000B
 
-void bq24735_init(bq24735_context_t* bq);
-void bq24735_handle(bq24735_context_t* bq);
+bool bq24735_connect();
+
+bool bq24735_charger_is_present();
+bool bq24735_charger_is_charging();
+void bq24735_enable_charging();
+void bq24735_disable_charging();
+
+int bq24735_config_charger(bq24735_context_t* bq);
