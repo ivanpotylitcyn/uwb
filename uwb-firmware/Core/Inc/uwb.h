@@ -91,3 +91,4 @@ void rs485_transmit(uint8_t* buff_uart, uint16_t cnt);
 bool uwb_enable_led(uint16_t enable);
 bool uwb_enable_led_blink(uint16_t enable);
 
+void charge_handle();

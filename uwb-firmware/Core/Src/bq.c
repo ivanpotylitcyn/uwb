@@ -53,6 +53,9 @@ int bq24735_config_charger(bq24735_context_t* bq) {
     int ret;
     uint16_t value;
 
+    bq->charge_current = bq->charge_current == 0 ? 1024 : bq->charge_current;
+    bq->charge_voltage = bq->charge_voltage == 0 ? 4096 : bq->charge_voltage;
+    bq->input_current  = bq->input_current  == 0 ? 1024 : bq->input_current;
 
     // Setup config
 
@@ -95,7 +98,7 @@ bool bq24735_charger_is_present() {
     return (opt >= 0) && (opt & BQ24735_CHARGE_OPT_AC_PRESENT) ? true : false;
 }
 
-void bq24735_charger_is_charging() {
+bool bq24735_charger_is_charging() {
     int opt = bq24735_read_word(BQ24735_CHARGE_OPT);
     return (opt < 0) || (opt & BQ24735_CHARGE_OPT_CHG_DISABLE) ? false : true;
 }
@@ -104,6 +107,6 @@ void bq24735_enable_charging() {
     bq24735_update_word(BQ24735_CHARGE_OPT, BQ24735_CHARGE_OPT_CHG_DISABLE, 0);
 }
 
-int bq24735_disable_charging() {
+void bq24735_disable_charging() {
     bq24735_update_word(BQ24735_CHARGE_OPT, BQ24735_CHARGE_OPT_CHG_DISABLE, BQ24735_CHARGE_OPT_CHG_DISABLE);
 }

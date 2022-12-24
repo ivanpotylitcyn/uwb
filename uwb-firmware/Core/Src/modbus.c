@@ -191,17 +191,17 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 
             case UWB_CHARGE_CURRENT:
                 uwb.bq.charge_current = num_word;
-                bq24735_handle(&uwb.bq);
+                charge_handle();
                 break;
 
             case UWB_CHARGE_VOLTAGE:
                 uwb.bq.charge_voltage = num_word;
-                bq24735_handle(&uwb.bq);
+                charge_handle();
                 break;
 
             case UWB_INPUT_CURRENT:
                 uwb.bq.input_current = num_word;
-                bq24735_handle(&uwb.bq);
+                charge_handle();
                 break;
 
             case UWB_RESET:

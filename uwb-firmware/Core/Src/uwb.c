@@ -61,6 +61,7 @@ void read_flash() {
         uwb.bq.charge_current = 1024;
         uwb.bq.charge_voltage = 4096;
         uwb.bq.input_current = 1024;
+        uwb.bq.handle_timeout = 1000;
     }
 }
 
@@ -104,6 +105,10 @@ void uwb_init()
     uwb.bq.i2c_connected = false;
     uwb.bq.charger_is_present = false;
     uwb.bq.charger_is_charging = false;
+
+    uwb.bq.charging_enabled = true;
+
+    uwb.bq.handle_timeout = uwb.bq.handle_timeout < 1000 ? 1000 : uwb.bq.handle_timeout;
 
 
     // ****************************************
@@ -185,17 +190,22 @@ void charge_handle()
     // Check for I2C connection
     // ****************************************
 
+    uwb.bq.acok = HAL_GPIO_ReadPin(ACOK_bat_GPIO_Port, ACOK_bat_Pin);
+
     uwb.bq.i2c_connected = bq24735_connect();
 
-    if (!uwb.bq.i2c_connected)
+    if (!uwb.bq.i2c_connected) {
+        uwb.bq.i2c_connected = false;
+        uwb.bq.charger_is_present = false;
+        uwb.bq.charger_is_charging = false;
         return;
+    }
 
 
     // ****************************************
     // Read states, write configs
     // ****************************************
 
-    uwb.bq.acok = HAL_GPIO_ReadPin(ACOK_bat_GPIO_Port, ACOK_bat_Pin);
     uwb.bq.charger_is_present = bq24735_charger_is_present();
 
     if (!uwb.bq.charger_is_present)
