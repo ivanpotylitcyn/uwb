@@ -5,6 +5,17 @@
 #include "ps.h"
 //#include "modbus.h"
 
+#define UWB_RARE_DELAY              10000
+#define UWB_DENSE_DELAY             1000
+
+#define SETTINGS_ADDRESS            0x08009000
+
+#define UWB_SUBMERGED_THRESHOLD     20000 // Под водой
+#define UWB_ENMERGED_THRESHOLD      25000 // Всплыли
+#define BITRATE_RS485               256000
+#define LEDMASK                     0xAAAAAAAAAAAAAAAA
+#define UWB_BLINK_DELAY             500
+
 #define REF_CLK    ((uint32_t)16000000U)
 
 typedef enum {
@@ -45,10 +56,11 @@ typedef enum {
     UWB_CHARGE_CURRENT  = 0x14,
     UWB_CHARGE_VOLTAGE  = 0x15,
     UWB_INPUT_CURRENT   = 0x16,
-    UWB_IS_CHARGING     = 0x17,
+    UWB_CHARGE_OPTION   = 0x17,
     UWB_RESET           = 0x18,
     UWB_RESTART         = 0x19,
     UWB_SAVE_FLSH       = 0x1A,
+	UWB_SET_DEFAULTS    = 0x1B,
 } uwb_modbus_register_t;
 
 typedef struct {

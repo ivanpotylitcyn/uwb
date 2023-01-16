@@ -1,17 +1,6 @@
 #include "uwb.h"
 #include "main.h"
 
-#define UWB_RARE_DELAY              10000
-#define UWB_DENSE_DELAY             1000
-
-#define SETTINGS_ADDRESS            0x08009000
-
-#define UWB_SUBMERGED_THRESHOLD     20000 // Под водой
-#define UWB_ENMERGED_THRESHOLD      25000 // Всплыли
-#define BITRATE_RS485               256000
-#define LEDMASK                     0xAAAAAAAAAAAAAAAA
-#define UWB_BLINK_DELAY             500
-
 uwb_context_t uwb;
 
 //static uint32_t start_rare_moment   = 0;
@@ -29,7 +18,7 @@ void write_flash() {
     FLASH_EraseInitTypeDef ef;            // Объявляю структуру, необходимую для функции стирания страницы
     ef.TypeErase = FLASH_TYPEERASE_PAGES; // Стирать постранично
     ef.PageAddress = SETTINGS_ADDRESS;    // Адрес страницы для стирания
-    ef.NbPages = 1;                       //Число страниц = 1
+    ef.NbPages = 1;                       // Число страниц = 1
     uint32_t temp;                        // Временная переменная для результата стирания (не использую)
     HAL_FLASHEx_Erase(&ef, &temp);        // Вызов функции стирания
 
@@ -57,12 +46,12 @@ void read_flash() {
         uwb.press_rtig2 = UWB_ENMERGED_THRESHOLD;
         uwb.led_mask = LEDMASK;
         uwb.ledrate = UWB_BLINK_DELAY;
-
-        uwb.bq.charge_current = 1024;
-        uwb.bq.charge_voltage = 4096;
-        uwb.bq.input_current = 1024;
-        uwb.bq.handle_timeout = 1000;
     }
+
+    uwb.bq.charge_current = 1024;
+    uwb.bq.charge_voltage = 4096;
+    uwb.bq.input_current = 1024;
+    uwb.bq.handle_timeout = 1000;
 }
 
 void TM_CRC_INIT() {
@@ -205,6 +194,8 @@ void charge_handle()
     // ****************************************
     // Read states, write configs
     // ****************************************
+
+    uwb.bq.charge_option = bq24735_read_charge_option();
 
     uwb.bq.charger_is_present = bq24735_charger_is_present();
 

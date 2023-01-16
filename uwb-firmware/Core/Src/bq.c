@@ -89,8 +89,15 @@ int bq24735_config_charger(bq24735_context_t* bq) {
         return ret;
     bq->input_current = ret <= bq->input_current ? ret : bq->input_current;
 
-
     return BQ24735_OK;
+}
+
+uint16_t bq24735_read_charge_option() {
+    return bq24735_read_word(BQ24735_CHARGE_OPT);
+}
+
+int bq24735_write_charge_option(uint16_t charge_option) {
+	return bq24735_write_word(BQ24735_CHARGE_OPT, charge_option);
 }
 
 bool bq24735_charger_is_present() {

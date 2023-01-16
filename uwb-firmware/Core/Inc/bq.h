@@ -15,6 +15,7 @@ typedef struct {
     uint16_t charge_current;
     uint16_t charge_voltage;
     uint16_t input_current;
+    uint16_t charge_option;
 
     bool     charging_enabled;
 
@@ -50,6 +51,9 @@ typedef enum {
 #define BQ24735_DEVICE_ID_VALUE           0x000B
 
 bool bq24735_connect();
+
+uint16_t bq24735_read_charge_option();
+int bq24735_write_charge_option(uint16_t charge_option);
 
 bool bq24735_charger_is_present();
 bool bq24735_charger_is_charging();

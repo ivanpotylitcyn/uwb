@@ -35,7 +35,7 @@ uint16_t *ModBusRegs[ModBusRegsCnt] = {
                                         (uint16_t *)&(uwb.bq.charge_current),
                                         (uint16_t *)&(uwb.bq.charge_voltage),
                                         (uint16_t *)&(uwb.bq.input_current),
-                                        (uint16_t *)&(uwb.bq_is_charging),
+                                        (uint16_t *)&(uwb.bq.charge_option),
         };
 
 void modbus_init()
@@ -156,15 +156,6 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
                 uwb.ledrate = num_word;
                 break;
 
-//            case UWB_PRESS_TRIG_1:
-//                uwb.press_rtig1 = num_word;
-//                break;
-//
-//            case UWB_PRESS_TRIG_2:
-//                uwb.press_rtig2 = num_word;
-//                break;
-
-
             case UWB_MASK_LED_H1:
                 uwb.led_mask &= ~(((uint64_t)0xFFFF) << 48);
                 uwb.led_mask |= ((uint64_t)num_word) << 48;
@@ -204,6 +195,13 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
                 charge_handle();
                 break;
 
+            case UWB_CHARGE_OPTION:
+            	if (uwb.bq.i2c_connected)
+            		bq24735_write_charge_option(num_word);
+
+                charge_handle();
+                break;
+
             case UWB_RESET:
                 if (num_word) {
                     NVIC_SystemReset();
@@ -224,6 +222,20 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
                     write_flash();
                 }
                 break;
+
+            case UWB_SET_DEFAULTS:
+            	if (num_word) {
+                    uwb.bitrate_rs485 = BITRATE_RS485;
+                    uwb.press_rtig1 = UWB_SUBMERGED_THRESHOLD;
+                    uwb.press_rtig2 = UWB_ENMERGED_THRESHOLD;
+                    uwb.led_mask = LEDMASK;
+                    uwb.ledrate = UWB_BLINK_DELAY;
+
+                    uwb.bq.charge_current = 1024;
+                    uwb.bq.charge_voltage = 4096;
+                    uwb.bq.input_current = 1024;
+                    uwb.bq.handle_timeout = 1000;
+            	}
 
             default:
                 //ошибка
