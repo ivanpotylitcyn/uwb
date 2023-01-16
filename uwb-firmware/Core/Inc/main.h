@@ -72,6 +72,8 @@ void Error_Handler(void);
 #define EN_3V3_GPIO_Port GPIOA
 #define EN_6V0_Pin GPIO_PIN_6
 #define EN_6V0_GPIO_Port GPIOA
+#define ADC_BAT_Pin GPIO_PIN_0
+#define ADC_BAT_GPIO_Port GPIOB
 #define EN_RS_Pin GPIO_PIN_2
 #define EN_RS_GPIO_Port GPIOB
 #define I2C_SCL_BME_Pin GPIO_PIN_10

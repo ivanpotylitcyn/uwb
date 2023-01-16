@@ -3,6 +3,7 @@
 #include "bq.h"
 #include "bme280.h"
 #include "ps.h"
+#include "adc.h"
 //#include "modbus.h"
 
 #define UWB_RARE_DELAY              10000

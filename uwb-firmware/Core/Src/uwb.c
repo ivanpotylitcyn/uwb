@@ -99,6 +99,8 @@ void uwb_init()
 
     uwb.bq.handle_timeout = uwb.bq.handle_timeout < 1000 ? 1000 : uwb.bq.handle_timeout;
 
+    HAL_ADCEx_Calibration_Start(&hadc, ADC_SINGLE_ENDED);
+
 
     // ****************************************
     // Enable power
@@ -169,6 +171,23 @@ void charge_handle()
         return;
 
     bq_last_handle_moment = HAL_GetTick();
+
+
+    // ****************************************
+    // Battarey Voltage ADC control
+    // ****************************************
+
+    HAL_ADC_Start(&hadc);					// запускаем преобразование сигнала АЦП
+    HAL_ADC_PollForConversion(&hadc, 100);	// ожидаем окончания преобразования
+    uint32_t adc = HAL_ADC_GetValue(&hadc);	// читаем полученное значение в переменную adc
+    HAL_ADC_Stop(&hadc);					// останавливаем АЦП (не обязательно)
+
+    // 1. По значению АЦП получить Вольты. Скорее всего динамический диапазон АЦП - 3.3В, разнядность - 12 бит
+    // 2. Умножить на коэффициент делителя. Его нужно согласовать с Сашей, он предложил 1.5, думаю можно для начала оставить 1.5
+    // 3. Найти в интернете табличку примерного соответсвия напряжения заряду и перевести Вольты в целое число процентов заряда
+    // 4. Вывести проценты в регистр Modbus
+
+
 
     if (uwb.mode == UWB_MODE_EMERGENCY) {
         HAL_GPIO_WritePin(EN_BQ_GPIO_Port, EN_BQ_Pin, GPIO_PIN_RESET);        // Disable BQ
