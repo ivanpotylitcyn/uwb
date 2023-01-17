@@ -87,6 +87,8 @@ typedef struct {
 
     uint16_t            bq_is_charging;
     uint16_t            water_sink;
+
+    uint16_t            power_percent;
 } uwb_context_t;
 
 extern uwb_context_t uwb;

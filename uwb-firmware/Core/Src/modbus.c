@@ -36,6 +36,7 @@ uint16_t *ModBusRegs[ModBusRegsCnt] = {
                                         (uint16_t *)&(uwb.bq.charge_voltage),
                                         (uint16_t *)&(uwb.bq.input_current),
                                         (uint16_t *)&(uwb.bq.charge_option),
+										(uint16_t *)&(uwb.power_percent),
         };
 
 void modbus_init()

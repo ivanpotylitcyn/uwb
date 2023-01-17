@@ -165,6 +165,53 @@ void sensors_handle()
 
 static uint32_t bq_last_handle_moment = 0;
 
+typedef struct {
+	float voltage;
+	int percent;
+} ChargeTable;
+
+int find_charge_percent(float voltage, ChargeTable table[], int size) {
+	int percent = 110;
+	for (int i = 0; i < size; i++) {
+		if (voltage >= table[i].voltage) {
+			percent = table[i].percent;
+		} else {
+			break;
+		}
+	}
+return percent;
+}
+
+ChargeTable chargeTable[] = {
+	{3.0, 0},
+	{2.999987916, 2},
+	{3.01479654, 13},
+	{3.029484326, 22},
+	{3.043169162, 27},
+	{3.063796107, 33},
+	{3.095576344,38},
+	{3.144370487, 42},
+	{3.234563525, 47},
+	{3.296522904, 50},
+	{3.364385189, 51},
+	{3.377357085, 52},
+	{3.415541704, 52},
+	{3.454245924, 54},
+	{3.486008036, 55},
+	{3.522307592, 56},
+	{3.577530285, 58},
+	{3.722462666, 64},
+	{3.846556637, 70},
+	{3.993446585, 78},
+	{4.144946479, 89},
+	{4.170207538, 91},
+	{4.182992135, 80},
+	{4.199824786, 90},
+	{4.2, 100}
+};
+
+int size = sizeof(chargeTable) / sizeof(chargeTable[0]);
+
 void charge_handle()
 {
     if (HAL_GetTick() - bq_last_handle_moment < uwb.bq.handle_timeout)
@@ -174,7 +221,7 @@ void charge_handle()
 
 
     // ****************************************
-    // Battarey Voltage ADC control
+    // Battery Voltage ADC control
     // ****************************************
 
     HAL_ADC_Start(&hadc);					// запускаем преобразование сигнала АЦП
@@ -182,11 +229,17 @@ void charge_handle()
     uint32_t adc = HAL_ADC_GetValue(&hadc);	// читаем полученное значение в переменную adc
     HAL_ADC_Stop(&hadc);					// останавливаем АЦП (не обязательно)
 
+    float adc_size = 4096;
+    uint8_t Vref = 5;
+    float Koef_adc = 1.5;
     // 1. По значению АЦП получить Вольты. Скорее всего динамический диапазон АЦП - 3.3В, разнядность - 12 бит
+    float volt_current = (Vref * adc) / adc_size;
     // 2. Умножить на коэффициент делителя. Его нужно согласовать с Сашей, он предложил 1.5, думаю можно для начала оставить 1.5
+    volt_current = volt_current * Koef_adc;
     // 3. Найти в интернете табличку примерного соответсвия напряжения заряду и перевести Вольты в целое число процентов заряда
+	uint16_t percent = find_charge_percent(volt_current, chargeTable, size);
     // 4. Вывести проценты в регистр Modbus
-
+	uwb.power_percent = percent;
 
 
     if (uwb.mode == UWB_MODE_EMERGENCY) {
