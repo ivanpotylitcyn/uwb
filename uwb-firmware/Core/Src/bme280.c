@@ -10,27 +10,27 @@ void Error(void) {
 //------------------------------------------------
 static void I2Cx_WriteData(uint16_t Addr, uint8_t Reg, uint8_t Value) {
     HAL_StatusTypeDef status = HAL_OK;
-    status = HAL_I2C_Mem_Write(&hi2c2, Addr, (uint16_t)Reg, I2C_MEMADD_SIZE_8BIT, &Value, 1, 0x10000);
+    status = HAL_I2C_Mem_Write(&hi2c2, Addr, (uint16_t)Reg, I2C_MEMADD_SIZE_8BIT, &Value, 1, 1000);
     if(status != HAL_OK) Error();
 }
 //------------------------------------------------
 static uint8_t I2Cx_ReadData(uint16_t Addr, uint8_t Reg) {
     HAL_StatusTypeDef status = HAL_OK;
     uint8_t value = 0;
-    status = HAL_I2C_Mem_Read(&hi2c2, Addr, Reg, I2C_MEMADD_SIZE_8BIT, &value, 1, 0x10000);
+    status = HAL_I2C_Mem_Read(&hi2c2, Addr, Reg, I2C_MEMADD_SIZE_8BIT, &value, 1, 1000);
     if(status != HAL_OK) Error();
     return value;
 }
 //------------------------------------------------
 static void I2Cx_ReadData16(uint16_t Addr, uint8_t Reg, uint16_t *Value) {
     HAL_StatusTypeDef status = HAL_OK;
-    status = HAL_I2C_Mem_Read(&hi2c2, Addr, Reg, I2C_MEMADD_SIZE_8BIT, (uint8_t*)Value, 2, 0x10000);
+    status = HAL_I2C_Mem_Read(&hi2c2, Addr, Reg, I2C_MEMADD_SIZE_8BIT, (uint8_t*)Value, 2, 1000);
     if(status != HAL_OK) Error();
 }
 //------------------------------------------------
 static void I2Cx_ReadData24(uint16_t Addr, uint8_t Reg, uint32_t *Value) {
     HAL_StatusTypeDef status = HAL_OK;
-    status = HAL_I2C_Mem_Read(&hi2c2, Addr, Reg, I2C_MEMADD_SIZE_8BIT, (uint8_t*)Value, 3, 0x10000);
+    status = HAL_I2C_Mem_Read(&hi2c2, Addr, Reg, I2C_MEMADD_SIZE_8BIT, (uint8_t*)Value, 3, 1000);
     if(status != HAL_OK) Error();
 }
 //------------------------------------------------

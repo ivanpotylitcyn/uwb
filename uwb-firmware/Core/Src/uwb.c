@@ -51,7 +51,6 @@ void read_flash() {
     uwb.bq.charge_current = 1024;
     uwb.bq.charge_voltage = 4096;
     uwb.bq.input_current = 1024;
-    uwb.bq.handle_timeout = 1000;
 }
 
 void TM_CRC_INIT() {
@@ -72,6 +71,27 @@ void switch_RS485() {
     TIM6->CR1 |= TIM_CR1_CEN;
 }
 
+typedef enum {
+	LED_RED = 0,
+	LED_GREEN,
+	LED_BLUE,
+	LED_ALL,
+} colour_led_t;
+
+static void enable_led(colour_led_t led, bool on) {
+	uint16_t pin = 0;
+
+	switch (led) {
+		case LED_RED:   pin = LED_R_Pin; break;
+		case LED_GREEN: pin = LED_G_Pin; break;
+		case LED_BLUE:  pin = LED_B_Pin; break;
+		case LED_ALL:	pin = LED_R_Pin | LED_G_Pin | LED_B_Pin; break;
+		default: return;
+	}
+
+	HAL_GPIO_WritePin(GPIOB, pin, on ? GPIO_PIN_RESET : GPIO_PIN_SET);
+}
+
 void uwb_init()
 {
     TM_CRC_INIT();
@@ -84,6 +104,12 @@ void uwb_init()
     uwb.mode = UWB_MODE_COMMAND;
     uwb.state = UWB_ONBOARD;
 
+    for (int i = 0; i < 3; i++) {
+		enable_led(LED_ALL, true);
+		HAL_Delay(100);
+		enable_led(LED_ALL, false);
+		HAL_Delay(100);
+    }
 
     // ****************************************
     // Init BQ state
@@ -92,12 +118,7 @@ void uwb_init()
     HAL_GPIO_WritePin(EN_BQ_GPIO_Port, EN_BQ_Pin, GPIO_PIN_SET);        // Enable BQ
 
     uwb.bq.i2c_connected = false;
-    uwb.bq.charger_is_present = false;
-    uwb.bq.charger_is_charging = false;
-
-    uwb.bq.charging_enabled = true;
-
-    uwb.bq.handle_timeout = uwb.bq.handle_timeout < 1000 ? 1000 : uwb.bq.handle_timeout;
+    uwb.bq.ac_is_present = false;
 
     HAL_ADCEx_Calibration_Start(&hadc, ADC_SINGLE_ENDED);
 
@@ -170,26 +191,15 @@ typedef struct {
 	int percent;
 } ChargeTable;
 
-int find_charge_percent(float voltage, ChargeTable table[], int size) {
-	int percent = 110;
-	for (int i = 0; i < size; i++) {
-		if (voltage >= table[i].voltage) {
-			percent = table[i].percent;
-		} else {
-			break;
-		}
-	}
-return percent;
-}
-
-ChargeTable chargeTable[] = {
-	{3.0, 0},
+static ChargeTable charge_table[] = {
+	{2.900000000, 0},
+	{2.989987916, 1},
 	{2.999987916, 2},
-	{3.01479654, 13},
+	{3.014796540, 13},
 	{3.029484326, 22},
 	{3.043169162, 27},
 	{3.063796107, 33},
-	{3.095576344,38},
+	{3.095576344, 38},
 	{3.144370487, 42},
 	{3.234563525, 47},
 	{3.296522904, 50},
@@ -207,14 +217,22 @@ ChargeTable chargeTable[] = {
 	{4.170207538, 91},
 	{4.182992135, 80},
 	{4.199824786, 90},
-	{4.2, 100}
+	{4.200000000, 100}
 };
 
-int size = sizeof(chargeTable) / sizeof(chargeTable[0]);
+static int charge_table_size = sizeof(charge_table) / sizeof(charge_table[0]);
+
+int find_charge_percent(float voltage) {
+	for (int i = 0; i < charge_table_size; i++)
+		if (voltage < charge_table[i].voltage)
+			return charge_table[i].percent;
+
+	return 100;
+}
 
 void charge_handle()
 {
-    if (HAL_GetTick() - bq_last_handle_moment < uwb.bq.handle_timeout)
+    if (HAL_GetTick() - bq_last_handle_moment < 1000)
         return;
 
     bq_last_handle_moment = HAL_GetTick();
@@ -224,23 +242,26 @@ void charge_handle()
     // Battery Voltage ADC control
     // ****************************************
 
-    HAL_ADC_Start(&hadc);					// запускаем преобразование сигнала АЦП
-    HAL_ADC_PollForConversion(&hadc, 100);	// ожидаем окончания преобразования
-    uint32_t adc = HAL_ADC_GetValue(&hadc);	// читаем полученное значение в переменную adc
-    HAL_ADC_Stop(&hadc);					// останавливаем АЦП (не обязательно)
+    HAL_ADC_Start(&hadc);							// запускаем преобразование сигнала АЦП
+    HAL_ADC_PollForConversion(&hadc, 100);			// ожидаем окончания преобразования
+    uint32_t adc_iout = HAL_ADC_GetValue(&hadc);	// читаем полученное значение в переменную adc
 
-    float adc_size = 4096;
-    uint8_t Vref = 5;
-    float Koef_adc = 1.5;
-    // 1. По значению АЦП получить Вольты. Скорее всего динамический диапазон АЦП - 3.3В, разнядность - 12 бит
-    float volt_current = (Vref * adc) / adc_size;
-    // 2. Умножить на коэффициент делителя. Его нужно согласовать с Сашей, он предложил 1.5, думаю можно для начала оставить 1.5
-    volt_current = volt_current * Koef_adc;
-    // 3. Найти в интернете табличку примерного соответсвия напряжения заряду и перевести Вольты в целое число процентов заряда
-	uint16_t percent = find_charge_percent(volt_current, chargeTable, size);
-    // 4. Вывести проценты в регистр Modbus
-	uwb.power_percent = percent;
+    HAL_ADC_Start(&hadc);							// запускаем преобразование сигнала АЦП
+    HAL_ADC_PollForConversion(&hadc, 100);			// ожидаем окончания преобразования
+    uint32_t adc_bat  = HAL_ADC_GetValue(&hadc);	// читаем полученное значение в переменную adc
 
+    float v_ref = 3.3;
+    uint32_t adc_size = 4096;
+
+	uwb.iout_mv = (uint16_t)(v_ref / (float)adc_size * (float)adc_iout * 20 * 1000);	// 20 - коэффициент из документации BQ, 1000 V -> mV
+
+	float volt_bat  = v_ref / (float)adc_size * (float)adc_bat * 1.585;	// 1.58 - коэффициент делителя, припаянного на плате
+	uwb.power_percent = find_charge_percent(volt_bat);
+
+
+    // ****************************************
+    // Check UWB mode
+    // ****************************************
 
     if (uwb.mode == UWB_MODE_EMERGENCY) {
         HAL_GPIO_WritePin(EN_BQ_GPIO_Port, EN_BQ_Pin, GPIO_PIN_RESET);        // Disable BQ
@@ -253,35 +274,83 @@ void charge_handle()
 
     uwb.bq.acok = HAL_GPIO_ReadPin(ACOK_bat_GPIO_Port, ACOK_bat_Pin);
 
-    uwb.bq.i2c_connected = bq24735_connect();
+    uwb.bq.i2c_connected = bq24735_is_connected();
 
     if (!uwb.bq.i2c_connected) {
         uwb.bq.i2c_connected = false;
-        uwb.bq.charger_is_present = false;
-        uwb.bq.charger_is_charging = false;
+        uwb.bq.ac_is_present = false;
+        enable_led(LED_GREEN, false);
+        enable_led(LED_BLUE, false);
         return;
     }
 
+    enable_led(LED_BLUE, true);
+
 
     // ****************************************
-    // Read states, write configs
+    // Check AC
     // ****************************************
 
-    uwb.bq.charge_option = bq24735_read_charge_option();
+    uwb.bq.ac_is_present = bq24735_ac_is_present();
 
-    uwb.bq.charger_is_present = bq24735_charger_is_present();
-
-    if (!uwb.bq.charger_is_present)
+    if (!uwb.bq.ac_is_present) {
+        enable_led(LED_GREEN, false);
         return;
+    }
 
-    bq24735_config_charger(&uwb.bq);
+    enable_led(LED_GREEN, true);
 
-    if (uwb.bq.charging_enabled)
-        bq24735_enable_charging();
-    else
-        bq24735_disable_charging();
 
-    uwb.bq.charger_is_charging = bq24735_charger_is_charging();
+    // ****************************************
+    // Enable charging
+    // ****************************************
+
+    bq24735_enable_charging(&uwb.bq);
+
+    // Read back config
+
+    uwb.charge_current = bq24735_read_charge_current();
+    uwb.charge_voltage = bq24735_read_charge_voltage();
+    uwb.input_current  = bq24735_read_input_current();
+    uwb.charge_option  = bq24735_read_charge_option();
+    uwb.charge_option  = bq24735_read_charge_option();
+}
+
+static period_ms = 2000;
+static cycle_ms = 250;
+static cycle_led_ms = 150;
+
+static void battery_led_handle() {
+	if (uwb.power_percent >= 75)
+		return;
+
+	uint32_t period_uptime = HAL_GetTick() % period_ms;
+	uint32_t cycle_uptime = period_uptime % cycle_ms;
+	uint32_t cycle_number = period_uptime / 250;
+
+	if (cycle_number == 0)
+		if (cycle_uptime < cycle_led_ms)
+			enable_led(LED_RED, true);
+		else
+			enable_led(LED_RED, false);
+
+	if (cycle_number == 1 && uwb.power_percent < 50)
+		if (cycle_uptime < cycle_led_ms)
+			enable_led(LED_RED, true);
+		else
+			enable_led(LED_RED, false);
+
+	if (cycle_number == 2 && uwb.power_percent < 25)
+		if (cycle_uptime < cycle_led_ms)
+			enable_led(LED_RED, true);
+		else
+			enable_led(LED_RED, false);
+}
+
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+  if (GPIO_Pin == WAKE_OPTO_Pin)
+    HAL_PWR_DisableSleepOnExit();
 }
 
 void uwb_handle()
@@ -304,6 +373,11 @@ void uwb_handle()
     if (!HAL_GPIO_ReadPin(go_to_sleep_GPIO_Port, go_to_sleep_Pin))
         uwb.mode = UWB_MODE_SLEEP;
 
+    GPIO_PinState wakeup_state = HAL_GPIO_ReadPin(WAKE_OPTO_GPIO_Port, WAKE_OPTO_Pin);
+
+    if (wakeup_state)
+    	uwb.mode = UWB_MODE_COMMAND;
+
 
     // ****************************************
     // Handle UWB state
@@ -314,6 +388,7 @@ void uwb_handle()
     case UWB_MODE_COMMAND:
         charge_handle();
         sensors_handle();
+        battery_led_handle();
         break;
 
     case UWB_MODE_EMERGENCY:
@@ -331,6 +406,8 @@ void uwb_handle()
         HAL_GPIO_WritePin(EN_5V0_GPIO_Port, EN_5V0_Pin, GPIO_PIN_RESET);        // Disable 5V0
         HAL_GPIO_WritePin(EN_3V3_GPIO_Port, EN_3V3_Pin, GPIO_PIN_RESET);        // Disable 3V3
         HAL_GPIO_WritePin(EN_6V0_GPIO_Port, EN_6V0_Pin, GPIO_PIN_RESET);        // Disable 6V0
+        // HAL_GPIO_WritePin(EN_Hall_GPIO_Port, EN_Hall_Pin, GPIO_PIN_RESET);   // Disable Hall sensor
+        enable_led(LED_ALL, false);
 
         HAL_SuspendTick();                                                      // Disable tick interrupt
         HAL_PWR_EnableSleepOnExit();                                            // Enable Sleep mode

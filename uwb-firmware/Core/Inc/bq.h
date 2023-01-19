@@ -8,9 +8,8 @@
 
 typedef struct {
     bool     i2c_connected;
-    bool     charger_is_present;
+    bool     ac_is_present;
     bool     acok;
-    bool     charger_is_charging;
 
     uint16_t charge_current;
     uint16_t charge_voltage;
@@ -18,8 +17,6 @@ typedef struct {
     uint16_t charge_option;
 
     bool     charging_enabled;
-
-    uint16_t handle_timeout;
 } bq24735_context_t;
 
 typedef enum {
@@ -50,14 +47,13 @@ typedef enum {
 #define BQ24735_MANUFACTURER_ID_VALUE     0x0040
 #define BQ24735_DEVICE_ID_VALUE           0x000B
 
-bool bq24735_connect();
+bool bq24735_is_connected();
+bool bq24735_ac_is_present();
+int bq24735_enable_charging(bq24735_context_t* bq);
 
+uint16_t bq24735_read_charge_current();
+uint16_t bq24735_read_charge_voltage();
+uint16_t bq24735_read_input_current();
 uint16_t bq24735_read_charge_option();
+
 int bq24735_write_charge_option(uint16_t charge_option);
-
-bool bq24735_charger_is_present();
-bool bq24735_charger_is_charging();
-void bq24735_enable_charging();
-void bq24735_disable_charging();
-
-int bq24735_config_charger(bq24735_context_t* bq);

@@ -58,10 +58,12 @@ typedef enum {
     UWB_CHARGE_VOLTAGE  = 0x15,
     UWB_INPUT_CURRENT   = 0x16,
     UWB_CHARGE_OPTION   = 0x17,
-    UWB_RESET           = 0x18,
-    UWB_RESTART         = 0x19,
-    UWB_SAVE_FLSH       = 0x1A,
-	UWB_SET_DEFAULTS    = 0x1B,
+	UWB_POWER_PERCENT   = 0x18,
+	UWB_IOUT_MV   		= 0x19,
+    UWB_RESET           = 0x1A,
+    UWB_RESTART         = 0x1B,
+    UWB_SAVE_FLSH       = 0x1C,
+	UWB_SET_DEFAULTS    = 0x1D,
 } uwb_modbus_register_t;
 
 typedef struct {
@@ -85,10 +87,15 @@ typedef struct {
     bme280_context_t    bme280;
     ps_context_t        ps;
 
-    uint16_t            bq_is_charging;
     uint16_t            water_sink;
 
+    uint16_t 			charge_current;
+    uint16_t 			charge_voltage;
+    uint16_t 			input_current;
+    uint16_t 			charge_option;
+
     uint16_t            power_percent;
+    uint16_t            iout_mv;
 } uwb_context_t;
 
 extern uwb_context_t uwb;

@@ -32,11 +32,12 @@ uint16_t *ModBusRegs[ModBusRegsCnt] = {
                                         (uint16_t *)&(uwb.led_toggle),
                                         (uint16_t *)&(uwb.led_blink),
                                         (uint16_t *)&(uwb.water_sink),
-                                        (uint16_t *)&(uwb.bq.charge_current),
-                                        (uint16_t *)&(uwb.bq.charge_voltage),
-                                        (uint16_t *)&(uwb.bq.input_current),
-                                        (uint16_t *)&(uwb.bq.charge_option),
+                                        (uint16_t *)&(uwb.charge_current),
+                                        (uint16_t *)&(uwb.charge_voltage),
+                                        (uint16_t *)&(uwb.input_current),
+                                        (uint16_t *)&(uwb.charge_option),
 										(uint16_t *)&(uwb.power_percent),
+										(uint16_t *)&(uwb.iout_mv),
         };
 
 void modbus_init()
@@ -235,7 +236,6 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
                     uwb.bq.charge_current = 1024;
                     uwb.bq.charge_voltage = 4096;
                     uwb.bq.input_current = 1024;
-                    uwb.bq.handle_timeout = 1000;
             	}
 
             default:

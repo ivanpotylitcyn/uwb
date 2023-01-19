@@ -101,7 +101,7 @@
   * @param  hadc       ADC handle
   * @param  SingleDiff Selection of single-ended or differential input
   *          This parameter can be only of the following values:
- *            @arg ADC_SINGLE_ENDED: Channel in mode input single ended
+  *            @arg ADC_SINGLE_ENDED: Channel in mode input single ended
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_ADCEx_Calibration_Start(ADC_HandleTypeDef* hadc, uint32_t SingleDiff)

@@ -35,7 +35,7 @@ static int bq24735_update_word(uint8_t reg, uint16_t mask, uint16_t value) {
 
 /* Public functions */
 
-bool bq24735_connect() {
+bool bq24735_is_connected() {
     int ret;
 
     ret = bq24735_read_word(BQ24735_MANUFACTURER_ID);
@@ -49,7 +49,12 @@ bool bq24735_connect() {
     return true;
 }
 
-int bq24735_config_charger(bq24735_context_t* bq) {
+bool bq24735_ac_is_present() {
+    int opt = bq24735_read_word(BQ24735_CHARGE_OPT);
+    return (opt >= 0) && (opt & BQ24735_CHARGE_OPT_AC_PRESENT) ? true : false;
+}
+
+int bq24735_enable_charging(bq24735_context_t* bq) {
     int ret;
     uint16_t value;
 
@@ -71,25 +76,23 @@ int bq24735_config_charger(bq24735_context_t* bq) {
     if (ret < 0)
         return ret;
 
-
-    // Read back config, protect from positive feedback
-
-    ret = bq24735_read_word(BQ24735_CHARGE_CURRENT);
+    ret = bq24735_update_word(BQ24735_CHARGE_OPT, BQ24735_CHARGE_OPT_CHG_DISABLE, 0);
     if (ret < 0)
-        return ret;
-    bq->charge_current = ret <= bq->charge_current ? ret : bq->charge_current;
-
-    ret = bq24735_read_word(BQ24735_CHARGE_VOLTAGE);
-    if (ret < 0)
-        return ret;
-    bq->charge_voltage = ret <= bq->charge_voltage ? ret : bq->charge_voltage;
-
-    ret = bq24735_read_word(BQ24735_INPUT_CURRENT);
-    if (ret < 0)
-        return ret;
-    bq->input_current = ret <= bq->input_current ? ret : bq->input_current;
+    	return ret;
 
     return BQ24735_OK;
+}
+
+uint16_t bq24735_read_charge_current() {
+    return bq24735_read_word(BQ24735_CHARGE_CURRENT);
+}
+
+uint16_t bq24735_read_charge_voltage() {
+    return bq24735_read_word(BQ24735_CHARGE_VOLTAGE);
+}
+
+uint16_t bq24735_read_input_current() {
+    return bq24735_read_word(BQ24735_INPUT_CURRENT);
 }
 
 uint16_t bq24735_read_charge_option() {
@@ -98,22 +101,4 @@ uint16_t bq24735_read_charge_option() {
 
 int bq24735_write_charge_option(uint16_t charge_option) {
 	return bq24735_write_word(BQ24735_CHARGE_OPT, charge_option);
-}
-
-bool bq24735_charger_is_present() {
-    int opt = bq24735_read_word(BQ24735_CHARGE_OPT);
-    return (opt >= 0) && (opt & BQ24735_CHARGE_OPT_AC_PRESENT) ? true : false;
-}
-
-bool bq24735_charger_is_charging() {
-    int opt = bq24735_read_word(BQ24735_CHARGE_OPT);
-    return (opt < 0) || (opt & BQ24735_CHARGE_OPT_CHG_DISABLE) ? false : true;
-}
-
-void bq24735_enable_charging() {
-    bq24735_update_word(BQ24735_CHARGE_OPT, BQ24735_CHARGE_OPT_CHG_DISABLE, 0);
-}
-
-void bq24735_disable_charging() {
-    bq24735_update_word(BQ24735_CHARGE_OPT, BQ24735_CHARGE_OPT_CHG_DISABLE, BQ24735_CHARGE_OPT_CHG_DISABLE);
 }
