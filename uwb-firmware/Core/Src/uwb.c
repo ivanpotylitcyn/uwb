@@ -47,10 +47,6 @@ void read_flash() {
         uwb.led_mask = LEDMASK;
         uwb.ledrate = UWB_BLINK_DELAY;
     }
-
-    uwb.bq.charge_current = 1024;
-    uwb.bq.charge_voltage = 4096;
-    uwb.bq.input_current = 1024;
 }
 
 void TM_CRC_INIT() {
@@ -119,6 +115,11 @@ void uwb_init()
 
     uwb.bq.i2c_connected = false;
     uwb.bq.ac_is_present = false;
+    uwb.bq.acok = false;
+
+    uwb.bq.charge_current = 1024;
+    uwb.bq.charge_voltage = 4096;
+    uwb.bq.input_current = 1024;
 
     HAL_ADCEx_Calibration_Start(&hadc, ADC_SINGLE_ENDED);
 
@@ -272,8 +273,6 @@ void charge_handle()
     // Check for I2C connection
     // ****************************************
 
-    uwb.bq.acok = HAL_GPIO_ReadPin(ACOK_bat_GPIO_Port, ACOK_bat_Pin);
-
     uwb.bq.i2c_connected = bq24735_is_connected();
 
     if (!uwb.bq.i2c_connected) {
@@ -293,7 +292,9 @@ void charge_handle()
 
     uwb.bq.ac_is_present = bq24735_ac_is_present();
 
-    if (!uwb.bq.ac_is_present) {
+    uwb.bq.acok = HAL_GPIO_ReadPin(ACOK_bat_GPIO_Port, ACOK_bat_Pin);
+
+    if (!uwb.bq.ac_is_present || !uwb.bq.acok) {
         enable_led(LED_GREEN, false);
         return;
     }
@@ -313,12 +314,11 @@ void charge_handle()
     uwb.charge_voltage = bq24735_read_charge_voltage();
     uwb.input_current  = bq24735_read_input_current();
     uwb.charge_option  = bq24735_read_charge_option();
-    uwb.charge_option  = bq24735_read_charge_option();
 }
 
-static period_ms = 2000;
-static cycle_ms = 250;
-static cycle_led_ms = 150;
+static uint32_t period_ms = 2000;
+static uint32_t cycle_ms = 250;
+static uint32_t cycle_led_ms = 150;
 
 static void battery_led_handle() {
 	if (uwb.power_percent >= 75)
